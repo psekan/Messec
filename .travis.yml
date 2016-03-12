@@ -1,0 +1,20 @@
+# TravisCI build settings file
+# For more info, see http://docs.travis-ci.com/user/getting-started/
+# To validate your .travis.yml, go to http://lint.travis-ci.org/
+
+# setting the project language
+language: cpp
+
+# setting compilers, do 2 separate sub-builds for gcc and clang
+compiler:
+  - gcc
+  - clang
+
+# script to run after build (run tests, etc.)
+before_install:
+  - wget https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.1.4.tar.gz
+  - tar -zxvf mbedtls-2.1.4.tar.gz
+  - sudo mv mbedtls-mbedtls-2.1.4 /usr/local/share/mbedtls
+install:
+  - make -C /usr/local/share/mbedtls no_test
+script: make -f TravisMakefile test
