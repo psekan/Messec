@@ -3,8 +3,7 @@
 # Variable settings
 CXXFLAGS=-std=c++11 -Wall -Wextra -I/usr/local/share/mbedtls/include/ -L/usr/local/share/mbedtls/library/
 LIBS=-lmbedcrypto
-SOURCES_CLIENT=src/client/
-SOURCES_SERVER=src/server/
+SOURCES_COMMON=src/client/ipv4.cpp
 # Source and object lists for testing binary
 SOURCES_TESTS=$(SOURCES_CLIENT) $(SOURCES_SERVER) src/tests/main.cpp
 OBJECTS_TESTS=$(SOURCES_TESTS:.cpp=.o)
