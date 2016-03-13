@@ -7,7 +7,7 @@ set(COMMON_FILES src/common/ipv4.cpp)
 set(SOURCE_FILES_CLIENT ${COMMON_FILES} src/client/main.cpp src/client/clientManager.cpp src/client/messenger.cpp)
 add_executable(MessecClient ${SOURCE_FILES_CLIENT})
 
-set(SOURCE_FILES_SERVER ${COMMON_FILES} src/server/main.cpp)
+set(SOURCE_FILES_SERVER ${COMMON_FILES} src/server/main.cpp src/server/serverManager.cpp src/server/client.cpp)
 add_executable(MessecServer ${SOURCE_FILES_SERVER})
 
 set(SOURCE_FILES_TESTS ${COMMON_FILES} src/tests/main.cpp)
