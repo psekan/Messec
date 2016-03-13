@@ -2,7 +2,9 @@
 # Messec
 Project for PB173 - Secure messaging system [![Build Status](https://travis-ci.org/psekan/Messec.svg?branch=master)](https://travis-ci.org/psekan/Messec)
 
-Team:
-Peter Sekan
-Marek Vančík
-Jakub Martinka
+
+## Authors
+
+* **Peter Sekan**
+* **Marek Vančík**
+* **Jakub Martinka**
