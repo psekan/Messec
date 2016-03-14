@@ -29,3 +29,15 @@
 
 #Clion
 .idea
+
+#Visual Studio Files
+Release
+Debug
+Messec.sdf
+Messec.VC.opendb
+client/Debug/
+client/Release/
+server/Debug/
+server/Release/
+testing/Debug/
+testing/Release/

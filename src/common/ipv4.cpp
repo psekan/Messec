@@ -1,7 +1,7 @@
 //
 // Created by Peter on 12.03.2016.
 //
-
+#define _CRT_SECURE_NO_WARNINGS
 #include "ipv4.h"
 
 /**
