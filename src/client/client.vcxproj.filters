@@ -15,24 +15,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\client\clientManager.cpp">
+    <ClCompile Include="clientManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\client\main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\client\messenger.cpp">
+    <ClCompile Include="messenger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\client\clientManager.h">
+    <ClInclude Include="clientManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\client\messenger.h">
+    <ClInclude Include="messenger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\common\connectionErrors.h">
+    <ClInclude Include="..\common\connectionErrors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

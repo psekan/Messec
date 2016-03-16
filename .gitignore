@@ -31,13 +31,10 @@
 .idea
 
 #Visual Studio Files
-Release
-Debug
-x64
 Messec.sdf
 Messec.VC.opendb
-vsprojects/**/Debug/
-vsprojects/**/Release/
-vsprojects/**/x64/
-vsprojects/**/*.vcxproj.user
+**/Debug/
+**/Release/
+**/x64/
+**/*.vcxproj.user
 .vs

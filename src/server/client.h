@@ -17,7 +17,18 @@ class Client {
     //Connection with client
     unsigned int m_socket;
     std::string m_userName;
-    unsigned char m_aesKey[32];
+    unsigned char m_aesKey[32]; //TODO
+
+	/**
+	 * Set client as logged in with user name
+	 * @param std::string user name
+	 */
+	void logInUser(std::string userName);
+
+	/**
+	* Set client as logged out
+	*/
+	void logOutUser();
 
     //Access for ServerManager
     friend class ServerManager;
@@ -44,13 +55,6 @@ public:
      * @return IPv4 ip
      */
     IPv4 getIPv4() const;
-
-    /**
-     * Set client as logged in with user name and set aes key for communication.
-     * @param std::string user name
-     * @param unsigned char[32] aes key
-     */
-    void logInUser(std::string userName, unsigned char aesKey[32]);
 
     /**
      * Encrypt message with aes key and send to client.

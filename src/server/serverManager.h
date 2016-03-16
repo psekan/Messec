@@ -9,26 +9,20 @@
 #include <vector>
 #include <mbedtls/rsa.h>
 #include "client.h"
+#include "database.h"
 
 class ServerManager {
     unsigned int m_socket;
     mbedtls_rsa_context m_rsaKey;
-    std::vector<Client> m_clients;
+    std::vector<Client*> m_clients;
     bool m_isRunning;
-
-    /**
-     * Add new user to database.
-     * @param std::string user name
-     * @param std::string password
-     * @return bool false if user with same name already exists
-     */
-    bool addUserToDatabase(std::string userName, std::string password);
+	Database m_database;
 
     /**
      * Process client incoming requests.
      * @param Client
      */
-    void processClientCommunication(Client& client);
+    void processClientCommunication(Client* client);
 
     /**
      * Process new requests for connection.
@@ -42,18 +36,18 @@ class ServerManager {
      * @param Client& requested client
      * @param unsigned char[16] verification hash
      */
-    void sendNewRequestToClient(Client& from, Client& to, unsigned char hash[16]);
+    void sendNewRequestToClient(Client* from, Client* to, unsigned char hash[16]);
 
     /**
      * Generate aes key and send them to both client and send to clients their ip addresses.
      * @param Client&
      * @param Client&
      */
-    void createCommunicationBetween(Client& communicationServer, Client& communicationClient);
+    void createCommunicationBetween(Client* communicationServer, Client* communicationClient);
 public:
     /**
      * Create new server manager on sqlite database.
-     * @exception exception if cannot read database file
+     * @exception DatabaseAccessForbidden if cannot read or create database file
      * @param std::string path to sqlite database
      */
     ServerManager(std::string dbFilePath);
@@ -100,6 +94,49 @@ public:
      * @return bool
      */
     bool isRunning() const;
+
+	/**
+	 * Add new user to database.
+	 * @param std::string user name
+	 * @param std::string password
+	 * @return bool false if registration fails (user already exists, bad format of password, ...)
+	 */
+	bool userRegistration(std::string userName, std::string password);
+
+	/**
+	 * Authentication of user
+	 * @param std::string user name
+	 * @param std::string password
+	 * @return bool false if authentication fails (user not exists, bad password, ...)
+	 */
+	bool userAuthentication(std::string userName, std::string password);
+
+	/**
+	 * New client is connected
+	 * @param unsigned int socket
+	 * @return Client& new client 
+	 */
+	Client* clientConnect(unsigned int socket);
+
+	/**
+	 * Disconnect client
+	 * @param Client* client, after call this function, pointer will be invalid
+	 */
+	void clientDisconnect(Client* client);
+
+	/**
+	 * Log in client as user
+	 * @param Client& client object
+	 * @param std::string user name
+	 * @param std::string user password
+	 * @return bool false if cannot log in user
+	 */
+	bool clientLogIn(Client* client, std::string userName, std::string password);
+
+	/**
+	 * Log out client as some user
+	 */
+	void clientLogOut(Client* client);
 };
 
 #endif //MESSEC_SERVERMANAGER_H

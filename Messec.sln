@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client", "vsprojects\client\client.vcxproj", "{63F691B8-E959-4E9F-A7ED-E1FA59909F64}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client", "src\client\client.vcxproj", "{63F691B8-E959-4E9F-A7ED-E1FA59909F64}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "vsprojects\server\server.vcxproj", "{D5DF2244-729C-4433-906A-42BFA188AAE0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "src\server\server.vcxproj", "{D5DF2244-729C-4433-906A-42BFA188AAE0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testing", "vsprojects\testing\testing.vcxproj", "{F6220745-B4DE-4BA9-9938-18109056747E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tests", "src\tests\tests.vcxproj", "{F6220745-B4DE-4BA9-9938-18109056747E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

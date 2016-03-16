@@ -3,6 +3,26 @@
 
 #include "../common/ipv4.h"
 
+TEST_CASE("Server tests") {
+	//TODO Jakub
+	SECTION("Constructor") {
+		//Otestuj vytvoreni s nezmyselnou cestou, s dobrou cestou ale neexistujucim suborom, aby ho vytvorilo,
+		//a otvorenie dva krat tej istej db, ci bude obsahovat to co predtym
+	}
+
+	SECTION("User registration") {
+
+	}
+
+	SECTION("User authentication") {
+
+	}
+
+	SECTION("List of online users") {
+
+	}
+}
+
 TEST_CASE("IPv4") {
     SECTION("Wrong format in string constructor") {
         CHECK_THROWS_AS(IPv4("text"), WrongIPv4Format);
