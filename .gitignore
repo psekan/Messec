@@ -33,13 +33,11 @@
 #Visual Studio Files
 Release
 Debug
+x64
 Messec.sdf
 Messec.VC.opendb
-client/Debug/
-client/Release/
-server/Debug/
-server/Release/
-testing/Debug/
-testing/Release/
-*.vcxproj.user
-.vs/Messec/v14/.suo
+vsprojects/**/Debug/
+vsprojects/**/Release/
+vsprojects/**/x64/
+vsprojects/**/*.vcxproj.user
+.vs

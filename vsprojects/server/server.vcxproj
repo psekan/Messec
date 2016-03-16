@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -74,11 +74,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories></AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\visualc\VS2010\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\visualc\VS2010\Release\mbedtls.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories></AdditionalLibraryDirectories>
+      <AdditionalDependencies>mbedTLS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -102,13 +102,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories></AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\visualc\VS2010\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\visualc\VS2010\Release\mbedtls.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories></AdditionalLibraryDirectories>
+      <AdditionalDependencies>mbedTLS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -118,25 +118,25 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories></AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\visualc\VS2010\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>C:\Users\Marek Vančík\Documents\Visual Studio 2015\Projects\mbedtls-2.2.1\visualc\VS2010\Release\mbedtls.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories></AdditionalLibraryDirectories>
+      <AdditionalDependencies>mbedTLS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\common\ipv4.cpp" />
-    <ClCompile Include="..\src\server\client.cpp" />
-    <ClCompile Include="..\src\server\main.cpp" />
-    <ClCompile Include="..\src\server\serverManager.cpp" />
+    <ClCompile Include="..\..\src\common\ipv4.cpp" />
+    <ClCompile Include="..\..\src\server\client.cpp" />
+    <ClCompile Include="..\..\src\server\main.cpp" />
+    <ClCompile Include="..\..\src\server\serverManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\common\ipv4.h" />
-    <ClInclude Include="..\src\server\client.h" />
-    <ClInclude Include="..\src\server\serverManager.h" />
+    <ClInclude Include="..\..\src\common\ipv4.h" />
+    <ClInclude Include="..\..\src\server\client.h" />
+    <ClInclude Include="..\..\src\server\serverManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
