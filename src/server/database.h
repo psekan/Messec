@@ -76,10 +76,10 @@ public:
 
 	/**
 	 * Insert new user to database
-	 * @param UserDatabaseRow& user
+	 * @param UserDatabaseRow user
 	 * @return bool false if insert fails
 	 */
-	bool insertUser(const UserDatabaseRow& user);
+	bool insertUser(UserDatabaseRow user);
 
 
 	/**
