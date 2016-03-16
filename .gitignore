@@ -41,3 +41,5 @@ server/Debug/
 server/Release/
 testing/Debug/
 testing/Release/
+*.vcxproj.user
+.vs/Messec/v14/.suo
