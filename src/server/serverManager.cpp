@@ -7,6 +7,9 @@
 #include <algorithm>
 #include "mbedtls/havege.h"
 #include "mbedtls/sha512.h"
+#include "mbedtls/pkcs5.h"
+
+#define NUMBER_OF_ITERATIONS 1000
 
 void ServerManager::processClientCommunication(Client* client) {
 	//TODO
@@ -93,26 +96,40 @@ bool ServerManager::isRunning() const {
 
 bool ServerManager::userRegistration(std::string userName, std::string password) {
 	//TODO Marek
-	
+
+	if (password.length() < 8)
+	{
+		return false;
+	}
+
 	unsigned char salt[512];
-	mbedtls_sha512_context sha_ctx;
+	//mbedtls_sha512_context sha_ctx;
 	unsigned char sha_output[64];
 	mbedtls_havege_state havege_st;
+	unsigned char pbkdf2_output[64];
 	
 	mbedtls_havege_init(&havege_st);
 	mbedtls_havege_random(&havege_st, salt, 512);
+
+	//mbedtls_md_info_t md_info;
+	mbedtls_md_context_t md_ctx;
+	//mbedtls_md_init(&md_ctx);
+	//mbedtls_md_setup(&md_ctx, &md_info, 1);
+
+	mbedtls_pkcs5_pbkdf2_hmac(&md_ctx, reinterpret_cast<const unsigned char*>(password.c_str()),
+		password.length(), salt, 512, NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
 	
 	std::string salt_string(reinterpret_cast<char*>(salt));
-	password += salt_string;
+	//password += salt_string;
 	
-	mbedtls_sha512_init(&sha_ctx);
-	mbedtls_sha512_starts(&sha_ctx, 0);
-	mbedtls_sha512_update(&sha_ctx, reinterpret_cast<const unsigned char*>(password.c_str()), password.length());
-	mbedtls_sha512_finish(&sha_ctx, sha_output);
+	//mbedtls_sha512_init(&sha_ctx);
+	//mbedtls_sha512_starts(&sha_ctx, 0);
+	//mbedtls_sha512_update(&sha_ctx, reinterpret_cast<const unsigned char*>(password.c_str()), password.length());
+	//mbedtls_sha512_finish(&sha_ctx, sha_output);
 
-	std::string hash(reinterpret_cast<char*>(sha_output));
+	std::string database_string(reinterpret_cast<char*>(pbkdf2_output));
 	
-	return m_database.insertUser(UserDatabaseRow(userName, hash, salt_string));
+	return m_database.insertUser(UserDatabaseRow(userName, database_string, salt_string));
 }
 
 bool ServerManager::userAuthentication(std::string userName, std::string password) {
@@ -122,18 +139,23 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 	UserDatabaseRow row = m_database.getUser(userName);
 	std::string salt = row.getSalt();
 	std::string row_hash = row.getPassword();
+	unsigned char pbkdf2_output[64];
+	mbedtls_md_context_t md_ctx;
 
-	mbedtls_sha512_context sha_ctx;
-	unsigned char sha_output[64];
+	mbedtls_pkcs5_pbkdf2_hmac(&md_ctx, reinterpret_cast<const unsigned char*>(password.c_str()),
+		password.length(), reinterpret_cast<const unsigned char*>(salt.c_str()), salt.length(), NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
 
-	password += salt;
+	//mbedtls_sha512_context sha_ctx;
+	//unsigned char sha_output[64];
 
-	mbedtls_sha512_init(&sha_ctx);
-	mbedtls_sha512_starts(&sha_ctx, 0);
-	mbedtls_sha512_update(&sha_ctx, reinterpret_cast<const unsigned char*>(password.c_str()), password.length());
-	mbedtls_sha512_finish(&sha_ctx, sha_output);
+	//password += salt;
 
-	std::string hash(reinterpret_cast<char*>(sha_output));
+	//mbedtls_sha512_init(&sha_ctx);
+	//mbedtls_sha512_starts(&sha_ctx, 0);
+	//mbedtls_sha512_update(&sha_ctx, reinterpret_cast<const unsigned char*>(password.c_str()), password.length());
+	//mbedtls_sha512_finish(&sha_ctx, sha_output);
+
+	std::string hash(reinterpret_cast<char*>(pbkdf2_output));
 
 	if (row_hash.compare(hash) == 0)
 	{
