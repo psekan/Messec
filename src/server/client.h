@@ -61,7 +61,7 @@ public:
      * @param unsigned long long length of message in bytes
      * @param unsigned char* pointer to message data
      */
-    bool sendMessage(unsigned long long messageLength, unsigned char* message);
+    bool sendMessage(unsigned long long messageLength, const unsigned char* message);
 };
 
 
