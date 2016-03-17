@@ -23,6 +23,7 @@ IPv4 Client::getIPv4() const {
 
 bool Client::sendMessage(unsigned long long messageLength, unsigned char* message) {
 	//TODO
+	return false;
 }
 
 void Client::logInUser(std::string userName) {
