@@ -49,8 +49,6 @@ std::vector<std::string> ServerManager::getOnlineUsers() {
 	//TODO Marek
 	//Prebehni kontajner klientov a vytiahni mena prihlasenych
 
-
-
 	std::vector<std::string> onlineClients;
 
 	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
@@ -95,7 +93,6 @@ bool ServerManager::isRunning() const {
 
 bool ServerManager::userRegistration(std::string userName, std::string password) {
 	//TODO Marek
-
 	
 	unsigned char salt[512];
 	mbedtls_sha512_context sha_ctx;
@@ -150,7 +147,6 @@ Client* ServerManager::clientConnect(unsigned socket) {
 	//TODO Marek
 	//Pouzivaj triedu Client, vytvor pomocou dynamickej pamate novy object a 
 	//hod do kontajneru obsahujuceho pripojenych klientov
-
 
 	Client* newClient = new Client(socket);
 	m_clients.push_back(newClient);
