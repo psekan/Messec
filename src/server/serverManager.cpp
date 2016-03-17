@@ -27,7 +27,7 @@ void ServerManager::createCommunicationBetween(Client* communicationServer, Clie
 	//TODO
 }
 
-ServerManager::ServerManager(std::string dbFilePath) : m_database(dbFilePath, "y3%1!Ko7e@3e&"), m_isRunning(false) {
+ServerManager::ServerManager(std::string dbFilePath) : m_database(dbFilePath), m_isRunning(false) {
 
 }
 

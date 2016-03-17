@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "../common/ipv4.h"
+#include "../server/database.h"
 #include "../server/serverManager.h"
 #include <vector>
 /*
@@ -66,6 +67,23 @@ TEST_CASE("Server tests") {
 }
 
 */
+
+TEST_CASE("Database") {
+	CHECK_NOTHROW(Database database("test_database.db"));
+	Database database("test_database.db");
+	database.clearDatabase();
+	CHECK(database.insertUser(UserDatabaseRow("Name", "Pass", "Salt")));
+	CHECK((database.getLastError() == nullptr));
+	CHECK(!database.getUser("Name2").exists());
+	UserDatabaseRow user = database.getUser("Name");
+	CHECK(user.exists());
+	CHECK((user.getName() == "Name"));
+	CHECK((user.getPassword() == "Pass"));
+	CHECK((user.getSalt() == "Salt"));
+	CHECK(!database.removeUser("Name2"));
+	CHECK(database.removeUser("Name"));
+	CHECK(!database.getUser("Name").exists());
+}
 
 TEST_CASE("IPv4") {
     SECTION("Wrong format in string constructor") {

@@ -6,6 +6,7 @@
 #define MESSEC_DATABASE_H
 
 #include <string>
+#include "sqlite3.h"
 
 class WrongDatabasePassword : public std::exception {};
 
@@ -13,11 +14,13 @@ class DatabaseAccessForbidden : public std::exception {};
 
 class UserDatabaseRow
 {
+	bool m_exists;
 	std::string name;
 	std::string password;
 	std::string salt;
 public:
-	UserDatabaseRow(std::string name, std::string password, std::string salt) : name(name), password(password), salt(salt) {};
+	UserDatabaseRow() : m_exists(false), name(""), password(""), salt("") {};
+ 	UserDatabaseRow(std::string name, std::string password, std::string salt) : m_exists(true), name(name), password(password), salt(salt) {};
 
 	std::string getName() const
 	{
@@ -48,19 +51,26 @@ public:
 	{
 		this->salt = salt;
 	}
+
+	bool exists() const
+	{
+		return m_exists;
+	}
 };
 
 class Database
 {
+	char* lastError = nullptr;
+	sqlite3 *db;
+
+	void freeLastError();
 public:
 
 	/**
 	 * Constructor for open sqlite database with password 
-	 * If database file not exists create new
-	 * @exception WrongDatabasePassword if password is incorrect
 	 * @exception DatabaseAccessForbidden if cannot read or create database
 	 */
-	Database(std::string filePath, std::string password);
+	Database(std::string filePath);
 
 	/**
 	 * Close database
@@ -93,6 +103,12 @@ public:
 	 * Clear all database, remove all user
 	 */
 	void clearDatabase();
+
+	/**
+	 * Get last error message
+	 * @return char* c-style string or nullptr
+	 */
+	char* getLastError() const;
 };
 
 
