@@ -3,3 +3,5 @@
 //
 
 #include "database.h"
+
+Database::Database(std::string filePath, std::string password) {}

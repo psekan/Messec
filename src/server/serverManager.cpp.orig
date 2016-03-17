@@ -25,14 +25,17 @@ void ServerManager::createCommunicationBetween(Client* communicationServer, Clie
 }
 
 ServerManager::ServerManager(std::string dbFilePath) : m_database(dbFilePath, "y3%1!Ko7e@3e&"), m_isRunning(false) {
-
+	//TODO
 }
 
 bool ServerManager::start(int port, unsigned keySize) {
 	//TODO
 	m_isRunning = true;
-
+<<<<<<< HEAD
 	return true;
+=======
+	return false;
+>>>>>>> 0b244e0350fd6487e7fb121b41d856cf93063e2b
 }
 
 void ServerManager::stop() {
@@ -48,8 +51,7 @@ void ServerManager::clearDatabase() {
 std::vector<std::string> ServerManager::getOnlineUsers() {
 	//TODO Marek
 	//Prebehni kontajner klientov a vytiahni mena prihlasenych
-
-
+<<<<<<< HEAD
 
 	std::vector<std::string> onlineClients;
 
@@ -62,6 +64,10 @@ std::vector<std::string> ServerManager::getOnlineUsers() {
 	}
 
 	return onlineClients;
+=======
+	std::vector<std::string> sample;
+	return sample;
+>>>>>>> 0b244e0350fd6487e7fb121b41d856cf93063e2b
 }
 
 void ServerManager::removeUserFromDb(std::string userName) {
@@ -95,7 +101,7 @@ bool ServerManager::isRunning() const {
 
 bool ServerManager::userRegistration(std::string userName, std::string password) {
 	//TODO Marek
-
+<<<<<<< HEAD
 	
 	unsigned char salt[512];
 	mbedtls_sha512_context sha_ctx;
@@ -116,11 +122,15 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 	std::string hash(reinterpret_cast<char*>(sha_output));
 	
 	return m_database.insertUser(UserDatabaseRow(userName, hash, salt_string));
+=======
+	return false;
+>>>>>>> 0b244e0350fd6487e7fb121b41d856cf93063e2b
 }
 
 bool ServerManager::userAuthentication(std::string userName, std::string password) {
 	//TODO Marek
 	//Cisto overenie udajov na db
+<<<<<<< HEAD
 
 	UserDatabaseRow row = m_database.getUser(userName);
 	std::string salt = row.getSalt();
@@ -143,6 +153,8 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 		return true;
 	}
 
+=======
+>>>>>>> 0b244e0350fd6487e7fb121b41d856cf93063e2b
 	return false;
 }
 
@@ -150,11 +162,14 @@ Client* ServerManager::clientConnect(unsigned socket) {
 	//TODO Marek
 	//Pouzivaj triedu Client, vytvor pomocou dynamickej pamate novy object a 
 	//hod do kontajneru obsahujuceho pripojenych klientov
-
+<<<<<<< HEAD
 
 	Client* newClient = new Client(socket);
 	m_clients.push_back(newClient);
 	return newClient;
+=======
+	return nullptr;
+>>>>>>> 0b244e0350fd6487e7fb121b41d856cf93063e2b
 }
 
 void ServerManager::clientDisconnect(Client* client) {
@@ -169,6 +184,7 @@ void ServerManager::clientDisconnect(Client* client) {
 bool ServerManager::clientLogIn(Client* client, std::string userName, std::string password) {
 	//TODO Marek
 	//Zavolaj userAuthentication a pripadne logInUser na Client
+<<<<<<< HEAD
 
 	if (userAuthentication(userName, password))
 	{
@@ -176,6 +192,8 @@ bool ServerManager::clientLogIn(Client* client, std::string userName, std::strin
 		return true;
 	}
 
+=======
+>>>>>>> 0b244e0350fd6487e7fb121b41d856cf93063e2b
 	return false;
 }
 

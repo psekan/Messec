@@ -21,11 +21,13 @@ IPv4 Client::getIPv4() const {
 	return IPv4("0.0.0.0");
 }
 
-bool Client::sendMessage(unsigned long long messageLength, unsigned char* message) {
 bool Client::sendMessage(unsigned long long messageLength, const unsigned char* message) {
 	//TODO
-
+<<<<<<< HEAD
 	return true;
+=======
+	return false;
+>>>>>>> 0b244e0350fd6487e7fb121b41d856cf93063e2b
 }
 
 void Client::logInUser(std::string userName) {
