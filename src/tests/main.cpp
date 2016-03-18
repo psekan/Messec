@@ -55,12 +55,31 @@ TEST_CASE("Server tests") {
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
-		//login 1,3,4
+		Client* c1 = myServer.clientConnect(7001);
+		Client* c3 = myServer.clientConnect(7002);
+		Client* c4 = myServer.clientConnect(7003);
+		myServer.clientLogIn(c1, names[1], pw[1]);
+		myServer.clientLogIn(c3, names[3], pw[4]);
+		myServer.clientLogIn(c4, names[4], pw[4]);
+
 		std::vector<std::string> users = myServer.getOnlineUsers();
 		CHECK(users.size() == 3);
 		CHECK((users.at(0)).compare(names[1]) == 0);
 		CHECK((users.at(1)).compare(names[3]) == 0);
 		CHECK((users.at(2)).compare(names[4]) == 0);
+
+		myServer.clientLogOut(c3);
+		std::vector<std::string> users2 = myServer.getOnlineUsers();
+		CHECK(users2.size() == 2);
+		CHECK((users2.at(0)).compare(names[1]) == 0);
+		CHECK((users2.at(1)).compare(names[4]) == 0);
+
+		myServer.clientDisconnect(c1);
+		std::vector<std::string> users3 = myServer.getOnlineUsers();
+		CHECK(users2.size() == 1);
+		CHECK((users2.at(0)).compare(names[4]) == 0);
+		myServer.clientDisconnect(c3);
+		myServer.clientDisconnect(c4);
 
 		myServer.clearDatabase();
 	}
