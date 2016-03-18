@@ -4,7 +4,7 @@
 #include "../server/database.h"
 #include "../server/serverManager.h"
 #include <vector>
-/*
+
 TEST_CASE("Server tests") {
 	std::string names[5] = { "name0", "name1", "name2", "name3", "name4"};
 	std::string pw[5] = {"password0", "password1", "password2", "password3", "password4" };
@@ -66,7 +66,7 @@ TEST_CASE("Server tests") {
 	}
 }
 
-*/
+
 
 TEST_CASE("Database") {
 	CHECK_NOTHROW(Database database("test_database.db"));

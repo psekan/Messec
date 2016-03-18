@@ -119,11 +119,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ipv4.h" />
+    <ClInclude Include="..\server\client.h" />
+    <ClInclude Include="..\server\database.h" />
+    <ClInclude Include="..\server\serverManager.h" />
     <ClInclude Include="catch.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\ipv4.cpp" />
+    <ClCompile Include="..\server\client.cpp" />
     <ClCompile Include="..\server\database.cpp" />
+    <ClCompile Include="..\server\serverManager.cpp" />
     <ClCompile Include="..\server\sqlite3.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

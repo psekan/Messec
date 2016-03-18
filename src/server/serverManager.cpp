@@ -5,9 +5,9 @@
 #include "serverManager.h"
 #include <iostream>
 #include <algorithm>
-#include "mbedtls/havege.h"
-#include "mbedtls/sha512.h"
 #include "mbedtls/pkcs5.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
 
 #define NUMBER_OF_ITERATIONS 1000
 
@@ -103,13 +103,19 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 	}
 
 	unsigned char salt[512];
-	mbedtls_havege_state havege_st;
 	unsigned char pbkdf2_output[64];
 	const mbedtls_md_info_t* md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA512);
 	mbedtls_md_context_t md_ctx;
+	mbedtls_entropy_context entropy;
+	mbedtls_ctr_drbg_context ctr_drbg;
+	char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed";
 	
-	mbedtls_havege_init(&havege_st);
-	mbedtls_havege_random(&havege_st, salt, 512);
+	mbedtls_entropy_init(&entropy);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+
+	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, 
+		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
+	
 	mbedtls_md_init(&md_ctx);
 	mbedtls_md_setup(&md_ctx, md_info, 1);
 
@@ -117,6 +123,9 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 		password.length(), salt, 512, NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
 	
 	std::string salt_string(reinterpret_cast<char*>(salt));
+	
+	mbedtls_entropy_free(&entropy);
+	mbedtls_ctr_drbg_free(&ctr_drbg);
 
 	std::string database_string(reinterpret_cast<char*>(pbkdf2_output));
 	mbedtls_md_free(&md_ctx);
