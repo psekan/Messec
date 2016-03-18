@@ -1,6 +1,7 @@
 //
 // Created by Peter on 13.03.2016.
 //
+#define MBEDTLS_HAVEGE_C
 
 #include "serverManager.h"
 #include <iostream>
@@ -11,6 +12,7 @@
 #include "mbedtls/entropy_poll.h"
 
 #define NUMBER_OF_ITERATIONS 1000
+
 
 void ServerManager::processClientCommunication(Client* client) {
 	//TODO
@@ -110,10 +112,14 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
 	char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed";
-	
+	//mbedtls_havege_state havege_state;
+
+	//mbedtls_havege_init(&havege_state);
+
 	mbedtls_entropy_init(&entropy);
-	int result = mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_STRONG);
-	int result2 = mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_WEAK);
+	mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_STRONG);
+	mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_WEAK);
+	//mbedtls_entropy_add_source(&entropy, mbedtls_havege_poll, &havege_state, 512, MBEDTLS_ENTROPY_SOURCE_WEAK);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
 	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, 
 		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
@@ -121,14 +127,14 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 
 	mbedtls_md_init(&md_ctx);
 	mbedtls_md_setup(&md_ctx, md_info, 1);
-
 	mbedtls_pkcs5_pbkdf2_hmac(&md_ctx, reinterpret_cast<const unsigned char*>(password.c_str()),
 		password.length(), salt, 32, NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
 	
 	std::string salt_string(reinterpret_cast<char*>(salt));
 	
-	mbedtls_entropy_free(&entropy);
+	//mbedtls_havege_free(&havege_state);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
 
 	std::string database_string(reinterpret_cast<char*>(pbkdf2_output));
 	mbedtls_md_free(&md_ctx);
