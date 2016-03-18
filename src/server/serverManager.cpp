@@ -8,6 +8,7 @@
 #include "mbedtls/pkcs5.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
+#include <wincon.h>
 
 #define NUMBER_OF_ITERATIONS 1000
 
@@ -111,11 +112,15 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 	char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed";
 	
 	mbedtls_entropy_init(&entropy);
+	//mbedtls_entropy_add_source(&entropy, )
 	mbedtls_ctr_drbg_init(&ctr_drbg);
+
+	//CryptGenRandom();
 
 	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, 
 		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
-	
+	mbedtls_ctr_drbg_random(&ctr_drbg, salt, 512);
+
 	mbedtls_md_init(&md_ctx);
 	mbedtls_md_setup(&md_ctx, md_info, 1);
 
@@ -129,7 +134,7 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 
 	std::string database_string(reinterpret_cast<char*>(pbkdf2_output));
 	mbedtls_md_free(&md_ctx);
-	
+
 	return m_database.insertUser(UserDatabaseRow(userName, database_string, salt_string));
 }
 
