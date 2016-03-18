@@ -8,7 +8,7 @@
 #include "mbedtls/pkcs5.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
-#include <wincon.h>
+#include "mbedtls/entropy_poll.h"
 
 #define NUMBER_OF_ITERATIONS 1000
 
@@ -103,7 +103,7 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 		return false;
 	}
 
-	unsigned char salt[512];
+	unsigned char salt[32];
 	unsigned char pbkdf2_output[64];
 	const mbedtls_md_info_t* md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA512);
 	mbedtls_md_context_t md_ctx;
@@ -112,20 +112,18 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 	char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed";
 	
 	mbedtls_entropy_init(&entropy);
-	//mbedtls_entropy_add_source(&entropy, )
+	int result = mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_STRONG);
+	int result2 = mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_WEAK);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
-
-	//CryptGenRandom();
-
 	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, 
 		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
-	mbedtls_ctr_drbg_random(&ctr_drbg, salt, 512);
+	mbedtls_ctr_drbg_random(&ctr_drbg, salt, 32);
 
 	mbedtls_md_init(&md_ctx);
 	mbedtls_md_setup(&md_ctx, md_info, 1);
 
 	mbedtls_pkcs5_pbkdf2_hmac(&md_ctx, reinterpret_cast<const unsigned char*>(password.c_str()),
-		password.length(), salt, 512, NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
+		password.length(), salt, 32, NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
 	
 	std::string salt_string(reinterpret_cast<char*>(salt));
 	
