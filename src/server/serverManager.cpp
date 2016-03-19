@@ -84,7 +84,7 @@ void ServerManager::kickUser(std::string userName) {
 	//clientLogOut a clientDisconnect
 	std::string message = "You were kicked by server\n";
 
-	for (auto it = m_clients.begin(); it < m_clients.end(); ++it)
+	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
 	{
 		if (userName.compare((*it)->m_userName) == 0)
 		{
@@ -105,7 +105,15 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 
 	if (password.length() < 8)
 	{
-		std::cerr << "Password was too short (length at least 8 characters is required)";
+		std::cerr << "Password was too short (length at least 8 characters is required)\n";
+		return false;
+	}
+
+	UserDatabaseRow row = m_database.getUser(userName);
+	
+	if(row.getName().compare("") != 0)
+	{
+		std::cerr << "Username is taken\n";
 		return false;
 	}
 
@@ -167,6 +175,13 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 	//Cisto overenie udajov na db
 
 	UserDatabaseRow row = m_database.getUser(userName);
+	
+	if (row.getName().compare("") == 0)
+	{
+		std::cerr << "Wrong username\n";
+		return false;
+	}
+	
 	std::string salt = row.getSalt();
 	std::string row_hash = row.getPassword();
 	unsigned char salt_char[SALT_LENGTH];
@@ -195,11 +210,12 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 
 	mbedtls_md_free(&md_ctx);
 
-	if (memcpy(pbkdf2_output, row_hash_char, PBKDF2_LENGTH) == 0)
+	if (memcmp(pbkdf2_output, row_hash_char, PBKDF2_LENGTH) == 0)
 	{
 		return true;
 	}
 
+	std::cerr << "Wrong password\n";
 	return false;
 }
 
@@ -236,7 +252,7 @@ bool ServerManager::clientLogIn(Client* client, std::string userName, std::strin
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
-		return;
+		return false;
 	}
 	
 	std::string message; 
