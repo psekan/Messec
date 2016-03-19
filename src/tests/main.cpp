@@ -59,7 +59,7 @@ TEST_CASE("Server tests") {
 		Client* c3 = myServer.clientConnect(7002);
 		Client* c4 = myServer.clientConnect(7003);
 		myServer.clientLogIn(c1, names[1], pw[1]);
-		myServer.clientLogIn(c3, names[3], pw[4]);
+		myServer.clientLogIn(c3, names[3], pw[3]);
 		myServer.clientLogIn(c4, names[4], pw[4]);
 
 		std::vector<std::string> users = myServer.getOnlineUsers();
