@@ -1,8 +1,6 @@
 //
 // Created by Peter on 13.03.2016.
 //
-#define MBEDTLS_HAVEGE_C
-
 #include "serverManager.h"
 #include <iostream>
 #include <algorithm>
@@ -10,9 +8,12 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy_poll.h"
+#include <iomanip>
+#include <sstream>
 
 #define NUMBER_OF_ITERATIONS 1000
 
+int char_conversion = (sizeof(unsigned char) * 2);
 
 void ServerManager::processClientCommunication(Client* client) {
 	//TODO
@@ -112,34 +113,48 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
 	char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed";
-	//mbedtls_havege_state havege_state;
-
-	//mbedtls_havege_init(&havege_state);
+	std::ostringstream conversion_stream;
 
 	mbedtls_entropy_init(&entropy);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
 	mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_STRONG);
 	mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_WEAK);
-	//mbedtls_entropy_add_source(&entropy, mbedtls_havege_poll, &havege_state, 512, MBEDTLS_ENTROPY_SOURCE_WEAK);
-	mbedtls_ctr_drbg_init(&ctr_drbg);
 	mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, 
 		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
 	mbedtls_ctr_drbg_random(&ctr_drbg, salt, 32);
+
+	for (size_t i = 0; i < 32; ++i)
+	{
+		conversion_stream << std::hex << std::setw(char_conversion) << std::setfill('0') << static_cast<int>(salt[i]);
+	}
+
+	/*dobra konverzia naspet
+	for (size_t i = 0; i < salt2.length(); i += char_conversion, ++j) {
+		std::string byte = salt2.substr(i, char_conversion);
+		salt_char[j] = static_cast<char>(static_cast<int>(strtol(byte.c_str(), nullptr, char_conversion * 8)));
+	}*/
+
+	std::string salt_string = conversion_stream.str();
+	conversion_stream.clear();
+	conversion_stream.str("");
 
 	mbedtls_md_init(&md_ctx);
 	mbedtls_md_setup(&md_ctx, md_info, 1);
 	mbedtls_pkcs5_pbkdf2_hmac(&md_ctx, reinterpret_cast<const unsigned char*>(password.c_str()),
 		password.length(), salt, 32, NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
-	
-	std::string salt_string(reinterpret_cast<char*>(salt));
-	
-	//mbedtls_havege_free(&havege_state);
+		
+	for (size_t i = 0; i < 64; ++i)
+	{
+		conversion_stream << std::hex << std::setw(char_conversion) << std::setfill('0') << static_cast<int>(pbkdf2_output[i]);
+	}
+
+	std::string password_string = conversion_stream.str();
+
+	mbedtls_md_free(&md_ctx);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
 	mbedtls_entropy_free(&entropy);
 
-	std::string database_string(reinterpret_cast<char*>(pbkdf2_output));
-	mbedtls_md_free(&md_ctx);
-
-	return m_database.insertUser(UserDatabaseRow(userName, database_string, salt_string));
+	return m_database.insertUser(UserDatabaseRow(userName, password_string, salt_string));
 }
 
 bool ServerManager::userAuthentication(std::string userName, std::string password) {
@@ -149,19 +164,32 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 	UserDatabaseRow row = m_database.getUser(userName);
 	std::string salt = row.getSalt();
 	std::string row_hash = row.getPassword();
+	unsigned char salt_char[32];
+	unsigned char row_hash_char[64];
 	unsigned char pbkdf2_output[64];
 	const mbedtls_md_info_t* md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA512);
 	mbedtls_md_context_t md_ctx;
+	std::string byte;
+	size_t j = 0;
+
+	for (size_t i = 0; i < salt.length(); i += char_conversion, ++j) {
+		byte = salt.substr(i, char_conversion);
+		salt_char[j] = strtol(byte.c_str(), nullptr, char_conversion * 8);
+	}
 	
+	for (size_t i = 0; i < row_hash.length(); i += char_conversion, ++j) {
+		byte = row_hash.substr(i, char_conversion);
+		row_hash_char[j] = strtol(byte.c_str(), nullptr, char_conversion * 8);
+	}
+
 	mbedtls_md_init(&md_ctx);
 	mbedtls_md_setup(&md_ctx, md_info, 1);
-	mbedtls_pkcs5_pbkdf2_hmac(&md_ctx, reinterpret_cast<const unsigned char*>(password.c_str()),
-		password.length(), reinterpret_cast<const unsigned char*>(salt.c_str()), salt.length(), NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
+	mbedtls_pkcs5_pbkdf2_hmac(&md_ctx, reinterpret_cast<const unsigned char*>(password.c_str()), password.length(), 
+		salt_char, 32, NUMBER_OF_ITERATIONS, 64, pbkdf2_output);
 
-	std::string hash(reinterpret_cast<char*>(pbkdf2_output));
 	mbedtls_md_free(&md_ctx);
 
-	if (row_hash.compare(hash) == 0)
+	if (memcpy(pbkdf2_output, row_hash_char, 32) == 0)
 	{
 		return true;
 	}
