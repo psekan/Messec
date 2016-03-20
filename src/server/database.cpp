@@ -3,14 +3,14 @@
 //
 
 #include "database.h"
-#include <iostream>
+#include <cstring>
 
 Database::Database(std::string filePath) {
 	if (sqlite3_open(filePath.c_str(), &db) != SQLITE_OK) {
 		throw DatabaseAccessForbidden();
 	}
 
-	char* sql = "CREATE TABLE IF NOT EXISTS USER("  \
+	const char* sql = "CREATE TABLE IF NOT EXISTS USER("  \
 		"NAME           TEXT PRIMARY KEY NOT NULL," \
 		"PASSWORD       TEXT    NOT NULL," \
 		"SALT           TEXT    NOT NULL);";
@@ -27,7 +27,7 @@ Database::~Database() {
 }
 
 UserDatabaseRow Database::getUser(std::string userName) {
-	char* sql = "SELECT NAME, PASSWORD, SALT FROM USER WHERE NAME = ?;";
+	const char* sql = "SELECT NAME, PASSWORD, SALT FROM USER WHERE NAME = ?;";
 	sqlite3_stmt * stmt;
 	sqlite3_prepare(db, sql, (int)(strlen(sql) + 1), &stmt, nullptr);
 	sqlite3_bind_text(stmt, 1, userName.c_str(), (int)userName.length(), nullptr);
@@ -47,7 +47,7 @@ UserDatabaseRow Database::getUser(std::string userName) {
 }
 
 bool Database::insertUser(UserDatabaseRow user) {
-	char* sql = "INSERT INTO USER (NAME, PASSWORD, SALT) VALUES (?,?,?);";
+	const char* sql = "INSERT INTO USER (NAME, PASSWORD, SALT) VALUES (?,?,?);";
 	sqlite3_stmt * stmt;
 	sqlite3_prepare(db, sql, strlen(sql), &stmt, 0);
 	std::string name = user.getName();
@@ -66,7 +66,7 @@ bool Database::removeUser(std::string userName) {
 	if (!this->getUser(userName).exists()) {
 		return false;
 	}
-	char* sql = "DELETE FROM USER WHERE NAME = ?;";
+	const char* sql = "DELETE FROM USER WHERE NAME = ?;";
 	sqlite3_stmt * stmt;
 	sqlite3_prepare(db, sql, (int)(strlen(sql) + 1), &stmt, nullptr);
 	sqlite3_bind_text(stmt, 1, userName.c_str(), (int)userName.length(), nullptr);
@@ -77,7 +77,7 @@ bool Database::removeUser(std::string userName) {
 }
 
 void Database::clearDatabase() {
-	char* sql = "DELETE FROM USER;";
+	const char* sql = "DELETE FROM USER;";
 	freeLastError();
 	if (sqlite3_exec(db, sql, nullptr, nullptr, &lastError) != SQLITE_OK) {
 		throw std::exception();
