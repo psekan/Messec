@@ -5,16 +5,58 @@
 #include "../server/serverManager.h"
 #include <vector>
 
-TEST_CASE("Server tests") {
-	std::string names[5] = { "name0", "name1", "name2", "name3", "name4"};
-	std::string pw[5] = {"password0", "password1", "password2", "password3", "password4" };
-	
-	SECTION("Constructor") {
-		//Otestuj vytvoreni s nezmyselnou cestou, s dobrou cestou ale neexistujucim suborom, aby ho vytvorilo,
-		//a otvorenie dva krat tej istej db, ci bude obsahovat to co predtym
-		CHECK_THROWS_AS(ServerManager nokServer("./a/b/c/d/db_doesnt_exist"), DatabaseAccessForbidden);
-		CHECK_NOTHROW(ServerManager okServer("dbtest123456789ok"));
+TEST_CASE("Database tests") {
+	SECTION("Constructor database") {
+		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/db_doesnt_exist"), DatabaseAccessForbidden);
+		CHECK_NOTHROW(Database okDb("dbtest123456789ok"));
 	}
+
+	SECTION("Database write/read") {
+		Database myDB("myDB_test");
+		myDB.insertUser(UserDatabaseRow("testname", "testpassword", "testsalt"));
+		myDB.insertUser(UserDatabaseRow("testname2", "testpassword2", "testsalt2"));
+		UserDatabaseRow row = myDB.getUser("testname2");
+		CHECK(row.exists() == true);
+		CHECK(row.getName().compare("testname2") == 0);
+		CHECK(row.getPassword().compare("testpassword2") == 0);
+		CHECK(row.getSalt().compare("testsalt2") == 0);
+	}
+
+	SECTION("Load database") {
+		Database myDB("myDB_test");
+		myDB.insertUser(UserDatabaseRow("testname", "testpassword", "testsalt"));
+		myDB.insertUser(UserDatabaseRow("testname2", "testpassword2", "testsalt2"));
+		myDB.~Database();
+		Database myDB_open("myDB_test");
+		UserDatabaseRow row_open = myDB_open.getUser("testname");
+		CHECK(row_open.exists() == true);
+		CHECK(row_open.getName().compare("testname") == 0);
+		CHECK(row_open.getPassword().compare("testpassword") == 0);
+		CHECK(row_open.getSalt().compare("testsalt") == 0);
+	}
+
+	SECTION("clear database") {
+		Database myDB("myDB_to_clear");
+		myDB.insertUser(UserDatabaseRow("testname", "testpassword", "testsalt"));
+		myDB.insertUser(UserDatabaseRow("testname2", "testpassword2", "testsalt2"));
+		myDB.clearDatabase();
+		UserDatabaseRow row = myDB.getUser("testname");
+		CHECK(row.exists() == false);
+		CHECK(row.getName().compare("testname") != 0);
+		CHECK(row.getPassword().compare("testpassword") != 0);
+		CHECK(row.getName().compare("testsalt") != 0);
+	}
+}
+
+
+TEST_CASE("Server tests") {
+		std::string names[5] = { "name0", "name1", "name2", "name3", "name4" };
+		std::string pw[5] = { "password0", "password1", "password2", "password3", "password4" };
+
+	SECTION("Constructor database") {
+		CHECK_THROWS_AS(ServerManager nokserver("./a/b/c/d/db_doesnt_exist2"), DatabaseAccessForbidden);
+		CHECK_NOTHROW(ServerManager nokserver("dbtest123456789ok2"));
+		}
 
 	SECTION("User registration") {
 		ServerManager myServer("test_database");
