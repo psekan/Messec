@@ -5,7 +5,9 @@ CXXFLAGS=-std=c++11 -Wall -Wextra -I/usr/local/share/mbedtls/include/ -L/usr/loc
 LIBS=-lmbedcrypto
 SOURCES_COMMON=src/common/ipv4.cpp
 # Source and object lists for testing binary
-SOURCES_TESTS=$(SOURCES_COMMON) src/tests/main.cpp
+SOURCES_SERVER=$(SOURCES_COMMON) src/server/sqlite3.cpp src/server/database.cpp src/server/client.cpp src/server/serverManager.cpp
+
+SOURCES_TESTS=$(SOURCES_SERVER) src/tests/main.cpp
 OBJECTS_TESTS=$(SOURCES_TESTS:.cpp=.o)
 
 # Most frequently used automatic variables:

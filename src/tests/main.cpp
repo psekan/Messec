@@ -5,7 +5,7 @@
 #include "../server/serverManager.h"
 #include <vector>
 
-TEST_CASE("Server tests") {
+/*TEST_CASE("Server tests") {
 	std::string names[5] = { "name0", "name1", "name2", "name3", "name4"};
 	std::string pw[5] = {"password0", "password1", "password2", "password3", "password4" };
 	
@@ -83,7 +83,7 @@ TEST_CASE("Server tests") {
 
 		myServer.clearDatabase();
 	}
-}
+}*/
 
 
 
@@ -92,6 +92,7 @@ TEST_CASE("Database") {
 	Database database("test_database.db");
 	database.clearDatabase();
 	CHECK(database.insertUser(UserDatabaseRow("Name", "Pass", "Salt")));
+	CHECK(database.insertUser(UserDatabaseRow("Name1", "Pass1", "Salt1")));
 	CHECK((database.getLastError() == nullptr));
 	CHECK(!database.getUser("Name2").exists());
 	UserDatabaseRow user = database.getUser("Name");
@@ -99,8 +100,8 @@ TEST_CASE("Database") {
 	CHECK((user.getName() == "Name"));
 	CHECK((user.getPassword() == "Pass"));
 	CHECK((user.getSalt() == "Salt"));
-	CHECK(!database.removeUser("Name2"));
 	CHECK(database.removeUser("Name"));
+	CHECK(!database.removeUser("Name2"));
 	CHECK(!database.getUser("Name").exists());
 }
 

@@ -3,6 +3,7 @@
 //
 
 #include "database.h"
+#include <iostream>
 
 Database::Database(std::string filePath) {
 	if (sqlite3_open(filePath.c_str(), &db) != SQLITE_OK) {
@@ -28,26 +29,33 @@ Database::~Database() {
 UserDatabaseRow Database::getUser(std::string userName) {
 	char* sql = "SELECT NAME, PASSWORD, SALT FROM USER WHERE NAME = ?;";
 	sqlite3_stmt * stmt;
-	sqlite3_prepare(db, sql, strlen(sql) + 1, &stmt, nullptr);
-	sqlite3_bind_text(stmt, 1, userName.c_str(), userName.length(), nullptr);
+	sqlite3_prepare(db, sql, (int)(strlen(sql) + 1), &stmt, nullptr);
+	sqlite3_bind_text(stmt, 1, userName.c_str(), (int)userName.length(), nullptr);
 	freeLastError();
-	int ret = sqlite3_step(stmt);
-	sqlite3_finalize(stmt);
-	if (ret != SQLITE_ROW) return UserDatabaseRow();
-	return UserDatabaseRow(
+	if (sqlite3_step(stmt) != SQLITE_ROW) {
+		sqlite3_finalize(stmt);
+		return UserDatabaseRow();
+	}
+
+	UserDatabaseRow user(
 		(const char*)sqlite3_column_text(stmt, 0), 
 		(const char*)sqlite3_column_text(stmt, 1), 
 		(const char*)sqlite3_column_text(stmt, 2)
 	);
+	sqlite3_finalize(stmt);
+	return user;
 }
 
 bool Database::insertUser(UserDatabaseRow user) {
 	char* sql = "INSERT INTO USER (NAME, PASSWORD, SALT) VALUES (?,?,?);";
 	sqlite3_stmt * stmt;
-	sqlite3_prepare(db, sql, strlen(sql) + 1, &stmt, nullptr);
-	sqlite3_bind_text(stmt, 1, user.getName().c_str(), user.getName().length(), nullptr);
-	sqlite3_bind_text(stmt, 2, user.getPassword().c_str(), user.getPassword().length(), nullptr);
-	sqlite3_bind_text(stmt, 3, user.getSalt().c_str(), user.getSalt().length(), nullptr);
+	sqlite3_prepare(db, sql, strlen(sql), &stmt, 0);
+	std::string name = user.getName();
+	std::string password = user.getPassword();
+	std::string salt = user.getSalt();
+	sqlite3_bind_text(stmt, 1, name.c_str(), (int)name.length(), SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, 2, password.c_str(), (int)password.length(), SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, 3, salt.c_str(), (int)salt.length(), SQLITE_TRANSIENT);
 	freeLastError();
 	int ret = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
@@ -55,10 +63,13 @@ bool Database::insertUser(UserDatabaseRow user) {
 }
 
 bool Database::removeUser(std::string userName) {
+	if (!this->getUser(userName).exists()) {
+		return false;
+	}
 	char* sql = "DELETE FROM USER WHERE NAME = ?;";
 	sqlite3_stmt * stmt;
-	sqlite3_prepare(db, sql, strlen(sql) + 1, &stmt, nullptr);
-	sqlite3_bind_text(stmt, 1, userName.c_str(), userName.length(), nullptr);
+	sqlite3_prepare(db, sql, (int)(strlen(sql) + 1), &stmt, nullptr);
+	sqlite3_bind_text(stmt, 1, userName.c_str(), (int)userName.length(), nullptr);
 	freeLastError();
 	int ret = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
