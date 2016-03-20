@@ -100,6 +100,7 @@ TEST_CASE("Server tests") {
 		}
 		CHECK(myServer.userRegistration(names[1], pw[1]) == false);
 		CHECK(myServer.userRegistration(names[3], "somepassword") == false);
+		myServer.clearDatabase();
 
 		std::string hundrNames[100];
 		std::string hundrPswrd[100];

@@ -10,6 +10,7 @@
 #include "mbedtls/entropy_poll.h"
 #include <iomanip>
 #include <sstream>
+#include <cstring>
 
 #define NUMBER_OF_ITERATIONS 1000
 #define SALT_LENGTH 32
@@ -111,7 +112,7 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 
 	UserDatabaseRow row = m_database.getUser(userName);
 	
-	if(row.getName().compare("") != 0)
+	if(row.getName().length() != 0)
 	{
 		std::cerr << "Username is taken\n";
 		return false;
@@ -191,7 +192,6 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 	mbedtls_md_context_t md_ctx;
 	std::string byte;
 	size_t j = 0;
-	int result = 0;
 
 	for (size_t i = 0; i < salt.length(); i += char_conversion, ++j) {
 		byte = salt.substr(i, char_conversion);
