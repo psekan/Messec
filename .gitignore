@@ -32,9 +32,13 @@
 
 #Visual Studio Files
 Messec.sdf
+Messec.opensdf
 Messec.VC.opendb
 **/Debug/
 **/Release/
 **/x64/
 **/*.vcxproj.user
 .vs
+
+#Tests databases
+src/tests/*.db

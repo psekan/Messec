@@ -1,7 +1,7 @@
 # Makefile for TravisCI
 
 # Variable settings
-CXXFLAGS=-std=c++11 -Wall -Wextra -I/usr/local/share/mbedtls/include/ -L/usr/local/share/mbedtls/library/
+CXXFLAGS=-std=c++11 -Wall -Wextra -I/usr/local/share/mbedtls/include/ -L/usr/local/share/mbedtls/library/ -pthread -ldl
 LIBS=-lmbedcrypto
 SOURCES_COMMON=src/common/ipv4.cpp
 # Source and object lists for testing binary
