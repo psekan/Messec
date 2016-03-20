@@ -151,8 +151,8 @@ TEST_CASE("Server tests") {
 
 		myServer.clientDisconnect(c1);
 		std::vector<std::string> users3 = myServer.getOnlineUsers();
-		CHECK(users2.size() == 1);
-		CHECK((users2.at(0)).compare(names[4]) == 0);
+		CHECK(users3.size() == 1);
+		CHECK((users3.at(0)).compare(names[4]) == 0);
 		myServer.clientDisconnect(c3);
 		myServer.clientDisconnect(c4);
 

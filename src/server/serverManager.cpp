@@ -155,12 +155,43 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 	{
 		conversion_stream << std::hex << std::setw(char_conversion) << std::setfill('0') << static_cast<int>(pbkdf2_output[i]);
 	}
-
+	
 	std::string password_string = conversion_stream.str();
 
 	mbedtls_md_free(&md_ctx);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
 	mbedtls_entropy_free(&entropy);
+
+	//if(userName.compare("name4") == 0)
+	//{
+	//	std::cout << "som tu";
+		/*std::cout << salt << std::endl;
+		std::cout << pbkdf2_output << std::endl;*/
+//	}
+
+	// dddddddddddddddddddddddddddddddddd
+
+/*	m_database.insertUser(UserDatabaseRow(userName, password_string, salt_string));
+
+	UserDatabaseRow pokus = m_database.getUser(userName);
+	password_string = pokus.getPassword();
+	salt_string = pokus.getSalt();
+
+	unsigned char pbkdf2_output2[PBKDF2_LENGTH];
+	unsigned char salt2[SALT_LENGTH];
+	int j = 0;
+
+	for (size_t i = 0; i < salt_string.length(); i += char_conversion, ++j) {
+		std::string byte = salt_string.substr(i, char_conversion);
+		salt2[j] = strtol(byte.c_str(), nullptr, char_conversion * 8);
+	}
+	j = 0;
+	for (size_t i = 0; i < password_string.length(); i += char_conversion, ++j) {
+		std::string byte = password_string.substr(i, char_conversion);
+		pbkdf2_output2[j] = strtol(byte.c_str(), nullptr, char_conversion * 8);
+	}*/
+
+	//ssssssaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 	if(result == 0)
 	{
@@ -198,10 +229,18 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 		salt_char[j] = strtol(byte.c_str(), nullptr, char_conversion * 8);
 	}
 	
+	j = 0;
+	
 	for (size_t i = 0; i < row_hash.length(); i += char_conversion, ++j) {
 		byte = row_hash.substr(i, char_conversion);
 		row_hash_char[j] = strtol(byte.c_str(), nullptr, char_conversion * 8);
 	}
+
+	/*if (userName.compare("name4") == 0)
+	{
+		std::cout << salt_char << std::endl;
+		std::cout << row_hash_char << std::endl;
+	}*/
 
 	mbedtls_md_init(&md_ctx);
 	mbedtls_md_setup(&md_ctx, md_info, 1);
