@@ -179,7 +179,7 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 	
 	if (row.getName().compare("") == 0)
 	{
-		std::cerr << "Wrong username\n";
+		std::cerr << "Wrong username or password\n";
 		return false;
 	}
 	
@@ -217,7 +217,7 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 		return true;
 	}
 
-	std::cerr << "Wrong password\n";
+	std::cerr << "Wrong username or password\n";
 	return false;
 }
 

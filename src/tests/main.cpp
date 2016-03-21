@@ -7,8 +7,8 @@
 
 TEST_CASE("Database tests") {
 	SECTION("Constructor database") {
-		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/db_doesnt_exist.db"), DatabaseAccessForbidden);
-		CHECK_NOTHROW(Database okDb("dbtest123456789ok.db"));
+		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/db_nok.db"), DatabaseAccessForbidden);
+		CHECK_NOTHROW(Database okDb("db_ok.db"));
 	}
 
 	SECTION("Database write/read") {
@@ -86,8 +86,8 @@ TEST_CASE("Server tests") {
 		std::string pw[5] = { "password0", "password1", "password2", "password3", "password4" };
 
 	SECTION("Constructor database") {
-		CHECK_THROWS_AS(ServerManager nokserver("./a/b/c/d/db_doesnt_exist2.db"), DatabaseAccessForbidden);
-		CHECK_NOTHROW(ServerManager nokserver("dbtest123456789ok2.db"));
+		CHECK_THROWS_AS(ServerManager nokserver("./a/b/c/d/db_nok2.db"), DatabaseAccessForbidden);
+		CHECK_NOTHROW(ServerManager nokserver("db_ok2.db"));
 		}
 
 	SECTION("User registration") {
@@ -158,6 +158,45 @@ TEST_CASE("Server tests") {
 
 		myServer.clearDatabase();
 	}
+
+	SECTION("Kick user") {
+		ServerManager myServer("test_database4.db");
+		for (int i = 0; i < 5; ++i) {
+			myServer.userRegistration(names[i], pw[i]);
+		}
+		Client* c2 = myServer.clientConnect(7010);
+		Client* c0 = myServer.clientConnect(7020);
+		Client* c3 = myServer.clientConnect(7030);
+		myServer.clientLogIn(c2, names[2], pw[2]);
+		myServer.clientLogIn(c0, names[0], pw[0]);
+		myServer.clientLogIn(c3, names[3], pw[3]);
+
+		std::vector<std::string> users = myServer.getOnlineUsers();
+		CHECK(users.size() == 3);
+		CHECK((users.at(0)).compare(names[2]) == 0);
+		CHECK((users.at(1)).compare(names[0]) == 0);
+		CHECK((users.at(2)).compare(names[3]) == 0);
+
+		myServer.kickUser(names[0]);
+		std::vector<std::string> users2 = myServer.getOnlineUsers();
+		CHECK(users2.size() == 2);
+		CHECK((users2.at(0)).compare(names[2]) == 0);
+		CHECK((users2.at(1)).compare(names[3]) == 0);
+		myServer.clearDatabase();
+	}
+
+	SECTION("delete user") {
+		ServerManager myServer("test_database5.db");
+		for (int i = 0; i < 5; ++i) {
+			myServer.userRegistration(names[i], pw[i]);
+		}
+		CHECK(myServer.userRegistration(names[2], pw[2]) == false);
+		myServer.removeUserFromDb(names[2]);
+		CHECK(myServer.userRegistration(names[2], pw[2]) == true);
+		myServer.clearDatabase();
+	}
+
+
 }
 
 
