@@ -4,7 +4,8 @@
 #include "../server/database.h"
 #include "../server/serverManager.h"
 #include <vector>
-
+#include "../client/messenger.h"
+/*
 TEST_CASE("Database tests") {
 	SECTION("Constructor database") {
 		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/db_nok.db"), DatabaseAccessForbidden);
@@ -197,6 +198,23 @@ TEST_CASE("Server tests") {
 	}
 
 
+}
+*/
+
+
+TEST_CASE("Encryption_Decryption") {
+	const unsigned char input[30] = { 'T','h','i','s','_','i','s','_','m','y','_','s','u','p','e','r','_','t','e','s','t','_','m','e','s','s','a','g','e','!' };
+	const unsigned char key[32] = { '0','1','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9','0','1' };
+	const unsigned char iv[32] = { 'a','b','c','d','e','f','g','h','8','9','0','1','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9','0','1' };
+	size_t inlen = 30;
+	size_t ivlen = 32;
+	unsigned char encrypted[30];
+	unsigned char decrypted[30];
+	unsigned char tag[64];
+	Messenger obj;
+	CHECK(obj.encrypt(input, inlen, encrypted, iv, ivlen, tag, key));
+	CHECK(obj.decrypt(encrypted, inlen, decrypted, iv, ivlen, tag, key));
+	CHECK(!memcmp(input, decrypted, inlen));
 }
 
 

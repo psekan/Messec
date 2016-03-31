@@ -9,6 +9,7 @@
 #include <string>
 #include <functional>
 #include "../common/connectionErrors.h"
+#include <mbedtls/gcm.h>
 
 class ClientManager;
 
@@ -33,7 +34,7 @@ class Messenger {
      * Private constructor for ClientManager.
      * @param std::string user name of other client
      */
-    Messenger(std::string userName);
+    //Messenger(std::string userName);
 
     /**
      * Set key for secured communication.
@@ -71,6 +72,11 @@ public:
      * @return bool true is message was successfully sent
      */
     bool sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message);
+	
+	bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
+
+	bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
+
 };
 
 

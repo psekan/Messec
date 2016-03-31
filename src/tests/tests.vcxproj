@@ -125,6 +125,7 @@
     <ClInclude Include="catch.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\client\messenger.cpp" />
     <ClCompile Include="..\common\ipv4.cpp" />
     <ClCompile Include="..\server\client.cpp" />
     <ClCompile Include="..\server\database.cpp" />
