@@ -5,7 +5,7 @@
 #include "../server/serverManager.h"
 #include <vector>
 #include "../client/messenger.h"
-/*
+
 TEST_CASE("Database tests") {
 	SECTION("Constructor database") {
 		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/db_nok.db"), DatabaseAccessForbidden);
@@ -199,8 +199,6 @@ TEST_CASE("Server tests") {
 
 
 }
-*/
-
 
 TEST_CASE("Encryption_Decryption") {
 	const unsigned char input[30] = { 'T','h','i','s','_','i','s','_','m','y','_','s','u','p','e','r','_','t','e','s','t','_','m','e','s','s','a','g','e','!' };
