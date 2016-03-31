@@ -210,7 +210,7 @@ TEST_CASE("Encryption_Decryption") {
 	size_t ivlen = 32;
 	unsigned char encrypted[30];
 	unsigned char decrypted[30];
-	unsigned char tag[64];
+	unsigned char tag[16];
 	Messenger obj;
 	CHECK(obj.encrypt(input, inlen, encrypted, iv, ivlen, tag, key));
 	CHECK(obj.decrypt(encrypted, inlen, decrypted, iv, ivlen, tag, key));
