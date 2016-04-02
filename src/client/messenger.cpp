@@ -5,17 +5,29 @@
 #include "messenger.h"
 #include <mbedtls/gcm.h>
 #include <string.h>
+#include <limits.h>
 
+// za predpokladu ze mame max 32 bitovu hodnotu v tom pocitadle (nezavisle od velkosti unsigned intu) 
 const int size_of_counter = 32 / sizeof(unsigned char);
 
 void intToUCHar(unsigned int input, unsigned char* oputput)
 {
-	memcpy(oputput, reinterpret_cast<char*>(&input), size_of_counter);
+	// keby je unsigned int 64 bitov tak by sa skopirovali len same nuly preto sa to posuva (mempcy skopiruje prve 4 bity)
+	// neni to prenositelne na ine endiany ani na platformu kde je int len 16 bitov
+	if (sizeof(unsigned int) == 8) {
+		input <<= 32;
+	}
+
+	memcpy(oputput, reinterpret_cast<char*>(&input), 4);
 }
 
 void uCHarToInt(unsigned char* input, unsigned int* oputput)
 {
-	memcpy(oputput, reinterpret_cast<unsigned int*>(&input), size_of_counter);
+	memcpy(oputput, reinterpret_cast<unsigned int*>(&input), 4);
+
+	if (sizeof(unsigned int) == 8) {
+		*oputput >>= 32;
+	}
 }
 
 void Messenger::setAes(unsigned char aesKey[32], unsigned char aesIv[32]) {
@@ -60,8 +72,14 @@ unsigned char* Messenger::receiveMessage(unsigned char& messageType, unsigned lo
 	if (result)
 	{
 		uCHarToInt(decrypted_counter, &counter_int);
+		++m_inCounter;
 
-		if (counter_int != ++m_inCounter)
+		if(m_inCounter > UINT32_MAX)
+		{
+			m_inCounter = 0;
+		}
+
+		if (counter_int != m_inCounter)
 		{
 			result = decrypt(message, messageLength, decrypted_message, m_aesIv, 16, message_tag, m_aesKey);
 
@@ -87,6 +105,12 @@ bool Messenger::sendMessage(unsigned char messageType, unsigned long long messag
 	unsigned char counter_char[size_of_counter];
 
 	++m_outCounter;
+
+	if (m_inCounter > UINT32_MAX)
+	{
+		m_inCounter = 0;
+	}
+
 	intToUCHar(m_outCounter, counter_char);
 
 	if (result)
