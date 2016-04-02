@@ -79,9 +79,29 @@ public:
     bool sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message);
 
 	unsigned char* receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message);
-	
+
+	/**
+	* encryption of message
+	* @param const unsigned char* message to encrypt
+	* @param size_t length of message
+	* @param unsigned char* encrypted message
+	* @param const unsigned char* initialization vector
+	* @param size_t length of initialization vector
+	* @param unsigned char* buffer holding tag of encrypted message
+	* @param const unsigned char* key for encryption 
+	*/
 	static bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 
+	/**
+	* decryption of message
+	* @param const unsigned char* message to decrypt
+	* @param size_t length of message
+	* @param unsigned char* decrypted message
+	* @param const unsigned char* initialization vector
+	* @param size_t length of initialization vector
+	* @param unsigned char* buffer holding tag to authenticate message
+	* @param const unsigned char* key for decryption
+	*/
 	static bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 
 };
