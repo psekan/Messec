@@ -9,7 +9,6 @@
 #include <string>
 #include <functional>
 #include "../common/connectionErrors.h"
-#include <mbedtls/gcm.h>
 
 class ClientManager;
 
@@ -26,22 +25,25 @@ class Messenger {
     std::string m_userName;
     unsigned int m_socket;
     unsigned char m_aesKey[32];
+	unsigned char m_aesIv[32];
+	unsigned int m_counter;
 
     //Access for ClientManager
     friend class ClientManager;
 
     /**
-     * Private constructor for ClientManager.
-     * @param std::string user name of other client
-     */
-    //Messenger(std::string userName);
-
-    /**
      * Set key for secured communication.
      * @param unsigned char[32] aes key for secured communication
+     * @param unsigned char[32] aes initialization vector for secured communication
      */
-    void setAesKey(unsigned char aesKey[32]);
+    void setAes(unsigned char aesKey[32], unsigned char aesIv[32]);
 public:
+	/**
+	* Constructor for ClientManager.
+	* @param std::string user name of other client
+	*/
+	Messenger(std::string userName, unsigned int socket, unsigned char aesKey[32], unsigned char aesIv[32], unsigned int counter);
+
     /**
      * Set messenger's callbacks. First argument in all callbacks is reference to messenger, which execute callback.
      * @param connectionLostCallback           Connection with other client was lost. Messenger will be no longer alive.
@@ -73,9 +75,9 @@ public:
      */
     bool sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message);
 	
-	bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
+	static bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 
-	bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
+	static bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 
 };
 
