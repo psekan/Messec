@@ -26,9 +26,9 @@ class Messenger {
     unsigned int m_socket;
     unsigned char m_aesKey[32];
 	unsigned char m_aesIv[32];
-	unsigned int m_outCounter;
 	unsigned int m_inCounter;
-
+	unsigned int m_outCounter;
+	
     //Access for ClientManager
     friend class ClientManager;
 

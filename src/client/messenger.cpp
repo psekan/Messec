@@ -4,6 +4,7 @@
 
 #include "messenger.h"
 #include <mbedtls/gcm.h>
+#include <string.h>
 
 const int size_of_counter = 32 / sizeof(unsigned char);
 
