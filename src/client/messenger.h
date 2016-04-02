@@ -26,7 +26,8 @@ class Messenger {
     unsigned int m_socket;
     unsigned char m_aesKey[32];
 	unsigned char m_aesIv[32];
-	unsigned int m_counter;
+	unsigned int m_outCounter;
+	unsigned int m_inCounter;
 
     //Access for ClientManager
     friend class ClientManager;
@@ -38,11 +39,13 @@ class Messenger {
      */
     void setAes(unsigned char aesKey[32], unsigned char aesIv[32]);
 public:
+	Messenger(){}
+
 	/**
 	* Constructor for ClientManager.
 	* @param std::string user name of other client
 	*/
-	Messenger(std::string userName, unsigned int socket, unsigned char aesKey[32], unsigned char aesIv[32], unsigned int counter);
+	Messenger(std::string userName, unsigned int socket, unsigned char aesKey[32], unsigned char aesIv[32], unsigned int inCounter, unsigned int outCounter);
 
     /**
      * Set messenger's callbacks. First argument in all callbacks is reference to messenger, which execute callback.
@@ -74,6 +77,8 @@ public:
      * @return bool true is message was successfully sent
      */
     bool sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message);
+
+	unsigned char* receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message);
 	
 	static bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 

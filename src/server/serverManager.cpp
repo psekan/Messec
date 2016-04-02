@@ -16,7 +16,7 @@
 #define SALT_LENGTH 32
 #define PBKDF2_LENGTH 64
 
-int char_conversion = (sizeof(unsigned char) * 2);
+const int char_conversion = (sizeof(unsigned char) * 2);
 
 int generateRandomNumber(unsigned char* output, int output_len)
 {
