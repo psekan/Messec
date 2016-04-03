@@ -346,6 +346,54 @@ TEST_CASE("Send/Receive message") {
 		delete[] bytesToSend;
 		delete[] receivedMessage;
 	}
+	SECTION("changed order") {
+		unsigned char key[32] = { 0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
+			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08,
+			0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
+			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08 };
+		unsigned char iv[32] = { 0x52, 0x2d, 0xc1, 0xf0, 0x99, 0x56, 0x7d, 0x07,
+			0xf4, 0x7f, 0x37, 0xa3, 0x2a, 0x84, 0x42, 0x7d,
+			0x64, 0x3a, 0x8c, 0xdc, 0xbf, 0xe5, 0xc0, 0xc9,
+			0x75, 0x98, 0xa2, 0xbd, 0x25, 0x55, 0xd1, 0xaa };
+
+		const char* messageToSend = "Magic test words for beloved test communication!";
+		const char* messageToSend2 = "Another very nice sentence!";
+
+		unsigned char messageType = 23;
+		unsigned char messageType2 = 24;
+		size_t messageLength = strlen(messageToSend);
+		size_t messageLength2 = strlen(messageToSend2);
+
+		uint32_t counterA = 0x12e3ab;
+		uint32_t counterB = 0xb6cd13;
+		Messenger first("first", 6888, key, iv, counterA, counterB);
+		Messenger second("second", 6777, key, iv, counterB, counterA);
+
+		unsigned char* bytesToSend = new unsigned char[messageLength + 21];
+		unsigned char* bytesToSend2 = new unsigned char[messageLength + 21];
+
+		first.prepareMessageToSend(messageType, messageLength, (const unsigned char*)messageToSend, bytesToSend);
+		first.prepareMessageToSend(messageType2, messageLength2, (const unsigned char*)messageToSend2, bytesToSend2);
+
+		unsigned char* receivedMessage = new unsigned char[messageLength];
+		unsigned char* receivedMessage2 = new unsigned char[messageLength2];
+
+		unsigned char receivedMessageType = 0;
+		CHECK(!second.parseReceivedMessage(bytesToSend2, messageLength2 + 21, receivedMessageType, receivedMessage2));
+		CHECK(second.parseReceivedMessage(bytesToSend, messageLength + 21, receivedMessageType, receivedMessage));
+		CHECK(receivedMessageType == messageType);
+		CHECK(memcmp(receivedMessage, messageToSend, messageLength) == 0);
+		receivedMessageType = 0;
+		CHECK(second.parseReceivedMessage(bytesToSend2, messageLength2 + 21, receivedMessageType, receivedMessage2));
+		CHECK(receivedMessageType == messageType2);
+		CHECK(memcmp(receivedMessage2, messageToSend2, messageLength2) == 0);
+
+		delete[] bytesToSend;
+		delete[] bytesToSend2;
+		delete[] receivedMessage;
+		delete[] receivedMessage2;
+	}
+
 }
 
 TEST_CASE("Database") {
