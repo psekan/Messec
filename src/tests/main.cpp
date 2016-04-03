@@ -384,6 +384,7 @@ TEST_CASE("Send/Receive message") {
 		CHECK(receivedMessageType == messageType);
 		CHECK(memcmp(receivedMessage, messageToSend, messageLength) == 0);
 		receivedMessageType = 0;
+		CHECK(!second.parseReceivedMessage(bytesToSend, messageLength + 21, receivedMessageType, receivedMessage));
 		CHECK(second.parseReceivedMessage(bytesToSend2, messageLength2 + 21, receivedMessageType, receivedMessage2));
 		CHECK(receivedMessageType == messageType2);
 		CHECK(memcmp(receivedMessage2, messageToSend2, messageLength2) == 0);
