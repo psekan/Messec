@@ -74,11 +74,20 @@ public:
      * @param unsigned char message type - number in interval [0-255]
      * @param unsigned long long length of message in bytes
      * @param unsigned char* message's bytes
+	 * @param unsigned char* output - pointer to acllocadted memory of size (messageLength + 36)
      * @return bool true is message was successfully sent
      */
-    bool sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message);
+    bool sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message, unsigned char* output);
 
-	unsigned char* receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message);
+	/**
+	* Send message to other client with some message type.
+	* @param unsigned char message type - number in interval [0-255]
+	* @param unsigned long long length of message in bytes
+	* @param unsigned char* message's bytes
+	* @param unsigned char* output - pointer to acllocadted memory of size (messageLength - 28)
+	* @return bool true is message was successfully sent
+	*/
+	bool receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message, unsigned char* output);
 	
 	static bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 

@@ -14,31 +14,15 @@ union charInt
 };
 
 const int size_of_counter = sizeof(uint32_t) / sizeof(unsigned char);
-const int size_of_tag = sizeof(unsigned char) * 16;
+const int size_of_tag = 16 / sizeof(unsigned char); // tag je vzdy 16 bytov
 
 void intToUCHar(uint32_t input, unsigned char* output)
 {
-/*	output[0] = input % 2 ^ (sizeof(unsigned char) * 8);
-	input >>= 8;
-	output[1] = input % 2 ^ (sizeof(unsigned char) * 8);
-	input >>= 8;
-	output[2] = input % 2 ^ (sizeof(unsigned char) * 8);
-	input >>= 8;
-	output[3] = input % 2 ^ (sizeof(unsigned char) * 8);*/
-
 	memcpy(output, &input, 4);
 }
 
 void uCHarToInt(unsigned char* input, uint32_t* output)
 {
-	/**output = static_cast<uint32_t>(input[0]);
-	*output <<= 8;
-	*output += static_cast<uint32_t>(input[1]);
-	*output <<= 8;
-	*output += static_cast<uint32_t>(input[2]);
-	*output <<= 8;
-	*output += static_cast<uint32_t>(input[3]);*/
-
 	memcpy(output, input, 4);
 }
 
@@ -69,12 +53,10 @@ void Messenger::exitCommunication() {
 }
 
 // sprava = counter_tag[16] + counter[4] + message_tag[16] + message[messageLength - 36]
-unsigned char* Messenger::receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message)
+bool Messenger::receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message, unsigned char* decrypted_message)
 {
 	unsigned char* counter = message + size_of_tag;
 	unsigned char* message_tag = message + size_of_counter + size_of_tag;
-
-	unsigned char* decrypted_message = static_cast<unsigned char*>(malloc(messageLength - 2 * 16 - 4 + 8)); // - 2 tagy - counter + decrypt vyzaduje rezervu 8 bytov
 	unsigned char decrypted_counter[12];
 
 	bool result = decrypt(counter, size_of_counter, decrypted_counter, m_aesIv, size_of_tag, message_tag, m_aesKey);
@@ -84,27 +66,18 @@ unsigned char* Messenger::receiveMessage(unsigned char& messageType, unsigned lo
 
 	if (result)
 	{
-		//uCHarToInt(decrypted_counter, &counter_int);
 		++m_inCounter;
-
-		if (counter_union.uint != m_inCounter)
+		if (counter_union.uint == m_inCounter)
 		{
-			result = decrypt(message, messageLength, decrypted_message, m_aesIv, size_of_tag, message_tag, m_aesKey);
-
-			if (result)
-			{
-				return decrypted_message;
-			}
-			return nullptr;
+			return decrypt(message, messageLength, decrypted_message, m_aesIv, size_of_tag, message_tag, m_aesKey);
 		}
+		--m_outCounter;
 	}
-	return nullptr;
+	return result;
 }
 
-bool Messenger::sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message) {
-
-	unsigned char* whole_message = static_cast<unsigned char*>(malloc(messageLength + 2 * 16 + 4));
-	
+bool Messenger::sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message, unsigned char* encrypted_message)
+{
 	unsigned char* counter = message + size_of_tag;
 	unsigned char* message_tag = message + size_of_counter + size_of_tag;
 
@@ -115,27 +88,17 @@ bool Messenger::sendMessage(unsigned char messageType, unsigned long long messag
 	union charInt counter_union;
 	counter_union.uint = m_outCounter;
 
-	//intToUCHar(m_outCounter, counter_char);
-
 	if (result)
 	{
-		result = encrypt(counter_union.string, size_of_counter, counter, m_aesIv, size_of_tag, whole_message, m_aesKey);
+		result = encrypt(counter_union.string, size_of_counter, counter, m_aesIv, size_of_tag, encrypted_message, m_aesKey);
 		return result;
 	}
+	--m_outCounter;
 	return false;
 }
 
 bool Messenger::encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key)
 {
-	/*uint32_t pokus = 65;
-	unsigned char a[4];
-	uint32_t pokus_vysledok;
-
-	intToUCHar(pokus, a);
-	uCHarToInt(a, &pokus_vysledok);*/
-
-	//std::cout << pokus << "     " << pokus_vysledok << std::endl;
-
 	mbedtls_gcm_context ctx;
 	mbedtls_gcm_init(&ctx);
 	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, /*m_aesKey*/ key, 256);
