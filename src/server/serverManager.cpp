@@ -56,7 +56,7 @@ int pbkdf2(unsigned char const* password, int password_len, unsigned char* salt,
 	return result;
 }
 
-void uCharToString(unsigned char* input, int input_len, std::string &output)
+void uCharToString(unsigned char* input, size_t input_len, std::string &output)
 {
 	std::ostringstream conversion_stream;
 

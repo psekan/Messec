@@ -79,6 +79,7 @@ public:
      */
     bool sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message, unsigned char* output);
 
+<<<<<<< HEAD
 	/**
 	* Send message to other client with some message type.
 	* @param unsigned char message type - number in interval [0-255]
@@ -88,6 +89,9 @@ public:
 	* @return bool true is message was successfully sent
 	*/
 	bool receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message, unsigned char* output);
+	
+=======
+	unsigned char* receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message);
 
 	/**
 	* encryption of message
@@ -99,6 +103,7 @@ public:
 	* @param unsigned char* buffer holding tag of encrypted message
 	* @param const unsigned char* key for encryption 
 	*/
+>>>>>>> 1dc9932b1423099bd5ed5e41a479e862bf98ae79
 	static bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 
 	/**
