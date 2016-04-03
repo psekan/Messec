@@ -18,7 +18,7 @@ class ClientManager {
     std::function<void(std::string,bool)> m_userChangeStatusCallback;
     std::function<bool(std::string)> m_newRequestCallback;
     std::function<void(std::string)> m_requestRejectedCallback;
-    std::function<void(std::string, Messenger&)> m_newCommunicationStartedCallback;
+    std::function<void(std::string, Messenger*)> m_newCommunicationStartedCallback;
 
     //Boolean values
     bool m_isConnected;
@@ -30,10 +30,15 @@ class ClientManager {
     unsigned char m_aesKey[32];
 
     //Connections with other clients
-    std::vector<Messenger> m_messengers;
+    std::vector<Messenger*> m_messengers;
 
     //Online users
     std::vector<std::string> m_onlineUsers;
+
+	//Constants
+	const static unsigned char MESSAGE_TYPE_SIGNIN = 1;
+	const static unsigned char MESSAGE_TYPE_LOGIN = 2;
+	const static unsigned char MESSAGE_TYPE_LOGOUT = 3;
 public:
     /**
      * Create new client manager and set callbacks. First argument in all callbacks is user name.
@@ -105,9 +110,9 @@ public:
 
     /**
      * Get all active messengers
-     * @return std::vector<Messenger&> container of references to messengers
+     * @return std::vector<Messenger*> container of references to messengers
      */
-    std::vector<Messenger&> getMessengers() const;
+    std::vector<Messenger*> getMessengers() const;
 
     /**
      * Create new request for communication with other online user.

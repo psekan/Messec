@@ -55,9 +55,6 @@ bool Messenger::prepareMessageToSend(unsigned char messageType, unsigned long lo
 	memcpy(input + sizeOfCounter, &messageType, sizeOfMessageType);
 	memcpy(input + sizeOfCounter + sizeOfMessageType, message, messageLength);
 
-	//Increase out counter
-	++m_outCounter;
-
 	//Compute tag and encrypted output
 	unsigned char* output = new unsigned char[inputLength + 8]; //+8 needed in function encrypt
 	unsigned char* tag = new unsigned char[TAG_SIZE];
@@ -71,6 +68,9 @@ bool Messenger::prepareMessageToSend(unsigned char messageType, unsigned long lo
 	//Copy tag and output to prepared message
 	memcpy(preparedMessage, tag, TAG_SIZE);
 	memcpy(preparedMessage + TAG_SIZE, output, inputLength);
+
+	//Increase out counter
+	++m_outCounter;
 
 	//Free allocated memory
 	delete[] input;
