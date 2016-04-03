@@ -32,6 +32,9 @@ class Messenger {
     //Access for ClientManager
     friend class ClientManager;
 
+	//Constants
+	const static size_t TAG_SIZE = 16;
+
     /**
      * Set key for secured communication.
      * @param unsigned char[32] aes key for secured communication
@@ -74,43 +77,52 @@ public:
      * @param unsigned char message type - number in interval [0-255]
      * @param unsigned long long length of message in bytes
      * @param unsigned char* message's bytes
-	 * @param unsigned char* output - pointer to acllocadted memory of size (messageLength + 36)
      * @return bool true is message was successfully sent
      */
-    bool sendMessage(unsigned char messageType, unsigned long long messageLength, unsigned char* message, unsigned char* output);
+    bool sendMessage(unsigned char messageType, unsigned long long messageLength, const unsigned char* message);
 
 	/**
-	* Send message to other client with some message type.
-	* @param unsigned char message type - number in interval [0-255]
-	* @param unsigned long long length of message in bytes
-	* @param unsigned char* message's bytes
-	* @param unsigned char* output - pointer to acllocadted memory of size (messageLength - 28)
-	* @return bool true is message was successfully sent
-	*/
-	bool receiveMessage(unsigned char& messageType, unsigned long long& messageLength, unsigned char* message, unsigned char* output);
+	 * Build byte stream to send other client
+     * @param unsigned char message type - number in interval [0-255]
+     * @param unsigned long long length of message in bytes
+     * @param unsigned char* message's bytes
+	 * @param unsigned char* prepared message - pointer to acllocadted memory of size (messageLength + 21)
+	 * @return bool true is message was successfully sent
+	 */
+	bool prepareMessageToSend(unsigned char messageType, unsigned long long messageLength, const unsigned char* message, unsigned char* preparedMessage);
 
 	/**
-	* encryption of message
-	* @param const unsigned char* message to encrypt
-	* @param size_t length of message
-	* @param unsigned char* encrypted message
-	* @param const unsigned char* initialization vector
-	* @param size_t length of initialization vector
-	* @param unsigned char* buffer holding tag of encrypted message
-	* @param const unsigned char* key for encryption 
-	*/
+	 * Parse received message from other client.
+	 * @param unsigned char* received message
+	 * @param unsigned long long length of received message in bytes
+	 * @param unsigned char message type - number in interval [0-255]
+	 * @param unsigned char* message's bytes - pointer to acllocadted memory of size (receivedMessageLength - 21)
+	 * @return bool true is message was successfully sent
+	 */
+	bool parseReceivedMessage(const unsigned char* receivedMessage, unsigned long long receivedMessageLength, unsigned char& messageType, unsigned char* message);
+
+	/**
+	 * encryption of message
+	 * @param const unsigned char* message to encrypt
+	 * @param size_t length of message
+	 * @param unsigned char* encrypted message
+	 * @param const unsigned char* initialization vector
+	 * @param size_t length of initialization vector
+	 * @param unsigned char* buffer holding tag of encrypted message
+	 * @param const unsigned char* key for encryption 
+	 */
 	static bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 
 	/**
-	* decryption of message
-	* @param const unsigned char* message to decrypt
-	* @param size_t length of message
-	* @param unsigned char* decrypted message
-	* @param const unsigned char* initialization vector
-	* @param size_t length of initialization vector
-	* @param unsigned char* buffer holding tag to authenticate message
-	* @param const unsigned char* key for decryption
-	*/
+	 * decryption of message
+	 * @param const unsigned char* message to decrypt
+	 * @param size_t length of message
+	 * @param unsigned char* decrypted message
+	 * @param const unsigned char* initialization vector
+	 * @param size_t length of initialization vector
+	 * @param unsigned char* buffer holding tag to authenticate message
+	 * @param const unsigned char* key for decryption
+	 */
 	static bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 
 };

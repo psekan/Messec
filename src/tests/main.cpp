@@ -323,11 +323,28 @@ TEST_CASE("Send/Receive message") {
 			0xf4, 0x7f, 0x37, 0xa3, 0x2a, 0x84, 0x42, 0x7d,
 			0x64, 0x3a, 0x8c, 0xdc, 0xbf, 0xe5, 0xc0, 0xc9,
 			0x75, 0x98, 0xa2, 0xbd, 0x25, 0x55, 0xd1, 0xaa};
-		unsigned char msg[17] = { 'M', 'a', 'g', 'i', 'c', ' ', 't', 'e', 's', 't', ' ', 'w', 'o', 'r', 'd', 's', '!' };
-		Messenger first("first", 6888, key, iv, 0, 0);
-		Messenger second("second", 6777, key, iv, 0, 0);
-		//first.sendMessage(0x00, 17, msg);
-		//second.receiveMessage(0x00, 42, msg2);
+
+		const char* messageForSend = "Magic test words!";
+		unsigned char messageType = 21;
+		size_t messageLength = strlen(messageForSend);
+
+		uint32_t counterA = 0x1368f2;
+		uint32_t counterB = 0xfa5372;
+		Messenger first("first", 6888, key, iv, counterA, counterB);
+		Messenger second("second", 6777, key, iv, counterB, counterA);
+
+		unsigned char* bytesToSend = new unsigned char[messageLength + 21];
+		CHECK(first.prepareMessageToSend(messageType, messageLength, (const unsigned char*)messageForSend, bytesToSend));
+		CHECK(memcmp(messageForSend, bytesToSend, messageLength) != 0);
+
+		unsigned char* receivedMessage = new unsigned char[messageLength];
+		unsigned char receivedMessageType = 0;
+		CHECK(second.parseReceivedMessage(bytesToSend, messageLength + 21, receivedMessageType, receivedMessage));
+		CHECK(receivedMessageType == messageType);
+		CHECK(memcmp(receivedMessage, messageForSend, messageLength) == 0);
+
+		delete[] bytesToSend;
+		delete[] receivedMessage;
 	}
 }
 
