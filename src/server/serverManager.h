@@ -10,6 +10,7 @@
 #include <mbedtls/rsa.h>
 #include "client.h"
 #include "database.h"
+#include <set>
 
 class ServerManager {
     unsigned int m_socket;
@@ -76,11 +77,10 @@ public:
      * @return std::vector<std::string> container of users names
      */
     std::vector<std::string> getOnlineUsers();
-
-    /**
-     * Remove specific user from database
-     * @param std::string user name
-     */
+	/**
+	 * Remove specific user from database
+	 * @param std::string user name
+	 */
     void removeUserFromDb(std::string userName);
 
     /**
@@ -123,7 +123,6 @@ public:
 	 * @param Client* client, after call this function, pointer will be invalid
 	 */
 	void clientDisconnect(Client* client);
-
 	/**
 	 * Log in client as user
 	 * @param Client& client object

@@ -27,8 +27,8 @@ int generateRandomNumber(unsigned char* output, int output_len)
 
 	mbedtls_entropy_init(&entropy);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
-	mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 512, MBEDTLS_ENTROPY_SOURCE_STRONG);
-	mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 64, MBEDTLS_ENTROPY_SOURCE_WEAK);
+	mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 64, MBEDTLS_ENTROPY_SOURCE_STRONG);
+	mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 16, MBEDTLS_ENTROPY_SOURCE_WEAK);
 
 	result += mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
 		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
