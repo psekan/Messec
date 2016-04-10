@@ -39,6 +39,8 @@ Messec.VC.opendb
 **/x64/
 **/*.vcxproj.user
 .vs
+*.psess
+*.vsp
 
 #Tests databases
 src/tests/*.db

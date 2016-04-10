@@ -41,7 +41,18 @@ class Messenger {
      * @param unsigned char[32] aes initialization vector for secured communication
      */
     void setAes(unsigned char aesKey[32], unsigned char aesIv[32]);
+
+	/**
+	* Add data to buffer
+	* @param unsigned char*& buffer
+	* @param const unsigned char* data
+	* @param const unsigned char* length of data
+	*/
+	static void addToBuffer(unsigned char*&buffer, const unsigned char* data, size_t dataLength);
 public:
+	//Constant
+	const static size_t MESSAGE_INFO_SIZE = 37;
+
 	Messenger(){}
 
 	/**
@@ -75,31 +86,31 @@ public:
     /**
      * Send message to other client with some message type.
      * @param unsigned char message type - number in interval [0-255]
-     * @param unsigned long long length of message in bytes
+     * @param size_t length of message in bytes
      * @param unsigned char* message's bytes
      * @return bool true is message was successfully sent
      */
-    bool sendMessage(unsigned char messageType, unsigned long long messageLength, const unsigned char* message);
+    bool sendMessage(unsigned char messageType, size_t messageLength, const unsigned char* message);
 
 	/**
 	 * Build byte stream to send other client
      * @param unsigned char message type - number in interval [0-255]
-     * @param unsigned long long length of message in bytes
+     * @param size_t length of message in bytes
      * @param unsigned char* message's bytes
-	 * @param unsigned char* prepared message - pointer to acllocadted memory of size (messageLength + 21)
+	 * @param unsigned char* prepared message - pointer to allocated memory of size (messageLength + MESSAGE_INFO_SIZE)
 	 * @return bool true is message was successfully sent
 	 */
-	bool prepareMessageToSend(unsigned char messageType, unsigned long long messageLength, const unsigned char* message, unsigned char* preparedMessage);
+	bool prepareMessageToSend(unsigned char messageType, size_t messageLength, const unsigned char* message, unsigned char* preparedMessage);
 
 	/**
 	 * Parse received message from other client.
 	 * @param unsigned char* received message
-	 * @param unsigned long long length of received message in bytes
+	 * @param size_t length of received message in bytes
 	 * @param unsigned char message type - number in interval [0-255]
-	 * @param unsigned char* message's bytes - pointer to acllocadted memory of size (receivedMessageLength - 21)
+	 * @param unsigned char* message's bytes - pointer to allocated memory of size (receivedMessageLength - MESSAGE_INFO_SIZE)
 	 * @return bool true is message was successfully sent
 	 */
-	bool parseReceivedMessage(const unsigned char* receivedMessage, unsigned long long receivedMessageLength, unsigned char& messageType, unsigned char* message);
+	bool parseReceivedMessage(const unsigned char* receivedMessage, size_t receivedMessageLength, unsigned char& messageType, unsigned char* message);
 
 	/**
 	 * encryption of message
@@ -123,8 +134,7 @@ public:
 	 * @param unsigned char* buffer holding tag to authenticate message
 	 * @param const unsigned char* key for decryption
 	 */
-	static bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
-
+	static bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, const unsigned char* tag, const unsigned char* key);
 };
 
 

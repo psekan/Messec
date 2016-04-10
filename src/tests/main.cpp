@@ -335,13 +335,13 @@ TEST_CASE("Send/Receive message") {
 		Messenger first("first", 6888, key, iv, counterA, counterB);
 		Messenger second("second", 6777, key, iv, counterB, counterA);
 
-		unsigned char* bytesToSend = new unsigned char[messageLength + 21];
+		unsigned char* bytesToSend = new unsigned char[messageLength + Messenger::MESSAGE_INFO_SIZE];
 		CHECK(first.prepareMessageToSend(messageType, messageLength, (const unsigned char*)messageForSend, bytesToSend));
 		CHECK(memcmp(messageForSend, bytesToSend, messageLength) != 0);
 
 		unsigned char* receivedMessage = new unsigned char[messageLength];
 		unsigned char receivedMessageType = 0;
-		CHECK(second.parseReceivedMessage(bytesToSend, messageLength + 21, receivedMessageType, receivedMessage));
+		CHECK(second.parseReceivedMessage(bytesToSend, messageLength + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, receivedMessage));
 		CHECK(receivedMessageType == messageType);
 		CHECK(memcmp(receivedMessage, messageForSend, messageLength) == 0);
 
@@ -371,23 +371,23 @@ TEST_CASE("Send/Receive message") {
 		Messenger first("first", 6888, key, iv, counterA, counterB);
 		Messenger second("second", 6777, key, iv, counterB, counterA);
 
-		unsigned char* bytesToSend = new unsigned char[messageLength + 21];
-		unsigned char* bytesToSend2 = new unsigned char[messageLength + 21];
+		unsigned char* bytesToSend = new unsigned char[messageLength + Messenger::MESSAGE_INFO_SIZE];
+		unsigned char* bytesToSend2 = new unsigned char[messageLength + Messenger::MESSAGE_INFO_SIZE];
 
-		first.prepareMessageToSend(messageType, messageLength, (const unsigned char*)messageToSend, bytesToSend);
-		first.prepareMessageToSend(messageType2, messageLength2, (const unsigned char*)messageToSend2, bytesToSend2);
+		CHECK(first.prepareMessageToSend(messageType, messageLength, (const unsigned char*)messageToSend, bytesToSend));
+		CHECK(first.prepareMessageToSend(messageType2, messageLength2, (const unsigned char*)messageToSend2, bytesToSend2));
 
 		unsigned char* receivedMessage = new unsigned char[messageLength];
 		unsigned char* receivedMessage2 = new unsigned char[messageLength2];
 
 		unsigned char receivedMessageType = 0;
-		CHECK(!second.parseReceivedMessage(bytesToSend2, messageLength2 + 21, receivedMessageType, receivedMessage2));
-		CHECK(second.parseReceivedMessage(bytesToSend, messageLength + 21, receivedMessageType, receivedMessage));
+		CHECK(!second.parseReceivedMessage(bytesToSend2, messageLength2 + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, receivedMessage2));
+		CHECK(second.parseReceivedMessage(bytesToSend, messageLength + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, receivedMessage));
 		CHECK(receivedMessageType == messageType);
 		CHECK(memcmp(receivedMessage, messageToSend, messageLength) == 0);
 		receivedMessageType = 0;
-		CHECK(!second.parseReceivedMessage(bytesToSend, messageLength + 21, receivedMessageType, receivedMessage));
-		CHECK(second.parseReceivedMessage(bytesToSend2, messageLength2 + 21, receivedMessageType, receivedMessage2));
+		CHECK(!second.parseReceivedMessage(bytesToSend, messageLength + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, receivedMessage));
+		CHECK(second.parseReceivedMessage(bytesToSend2, messageLength2 + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, receivedMessage2));
 		CHECK(receivedMessageType == messageType2);
 		CHECK(memcmp(receivedMessage2, messageToSend2, messageLength2) == 0);
 
