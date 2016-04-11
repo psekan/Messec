@@ -479,3 +479,46 @@ TEST_CASE("IPv4") {
 		}
 	}
 }*/
+
+TEST_CASE("Send/Receive message2") {
+	SECTION("send and receive2") {
+		unsigned char key[32] = { 0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
+			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08,
+			0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
+			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08 };
+		unsigned char iv[32] = { 0x52, 0x2d, 0xc1, 0xf0, 0x99, 0x56, 0x7d, 0x07,
+			0xf4, 0x7f, 0x37, 0xa3, 0x2a, 0x84, 0x42, 0x7d,
+			0x64, 0x3a, 0x8c, 0xdc, 0xbf, 0xe5, 0xc0, 0xc9,
+			0x75, 0x98, 0xa2, 0xbd, 0x25, 0x55, 0xd1, 0xaa };
+
+		uint32_t counterA = 0x1368f2;
+		uint32_t counterB = 0xfa5372;
+		Messenger first("first", 6888, key, iv, counterA, counterB);
+		Messenger second("second", 6777, key, iv, counterB, counterA);
+
+		for (int i = 0; i < 1000; ++i) {
+			char* messageForSend = "Magic test words! and now we add some bit to dfsdfmbklsdnfbdslfkbnasdbladbnfbadb"
+				"asdaskdjbnasdmvlksdas;dkvlasdvn sjsdf sjadfsnf sdfj sdfj sadfk sdvvhjern aerigjasvauvh ssoiajefjvhnvwiefj wef"
+				 "SFIJA DSVMAJVH";
+			unsigned char messageType = 21;
+			size_t messageLength = strlen(messageForSend);
+
+			messageForSend[i % messageLength] = 'l';
+			messageForSend[i % 45] = 'p';
+			messageForSend[i % 85] = 'k';
+
+			unsigned char* bytesToSend = new unsigned char[messageLength + Messenger::MESSAGE_INFO_SIZE];
+			CHECK(first.prepareMessageToSend(messageType, messageLength, (const unsigned char*)messageForSend, bytesToSend));
+			CHECK(memcmp(messageForSend, bytesToSend, messageLength) != 0);
+
+			unsigned char* receivedMessage = new unsigned char[messageLength];
+			unsigned char receivedMessageType = 0;
+			CHECK(second.parseReceivedMessage(bytesToSend, messageLength + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, receivedMessage));
+			CHECK(receivedMessageType == messageType);
+			CHECK(memcmp(receivedMessage, messageForSend, messageLength) == 0);
+
+			delete[] bytesToSend;
+			delete[] receivedMessage;
+		}
+	}
+}
