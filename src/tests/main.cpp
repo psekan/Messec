@@ -6,6 +6,11 @@
 #include <vector>
 #include "../client/messenger.h"
 
+/////////// profiling 10MB ////////////////
+#include <iostream>
+#include <fstream>
+/////////////////
+/*
 TEST_CASE("Database tests") {
 	SECTION("Constructor database") {
 		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/db_nok.db"), DatabaseAccessForbidden);
@@ -479,3 +484,45 @@ TEST_CASE("IPv4") {
 		}
 	}
 }*/
+
+TEST_CASE("profiling 1 MB") {
+	
+	std::ifstream file;
+	file.open("sample.pdf", std::ifstream::binary);
+	if (file.is_open()) {
+		const unsigned long megabyte = 1048576;
+		char* input = new char[megabyte];
+		file.read(input, megabyte);
+		file.close();
+		unsigned char key[32] = { 0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
+			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08,
+			0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
+			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08 };
+		unsigned char iv[32] = { 0x52, 0x2d, 0xc1, 0xf0, 0x99, 0x56, 0x7d, 0x07,
+			0xf4, 0x7f, 0x37, 0xa3, 0x2a, 0x84, 0x42, 0x7d,
+			0x64, 0x3a, 0x8c, 0xdc, 0xbf, 0xe5, 0xc0, 0xc9,
+			0x75, 0x98, 0xa2, 0xbd, 0x25, 0x55, 0xd1, 0xaa };
+
+		unsigned char messageType = 21;
+
+		uint32_t counterA = 0x1368f2;
+		uint32_t counterB = 0xfa5372;
+		Messenger first("first", 6888, key, iv, counterA, counterB);
+		Messenger second("second", 6777, key, iv, counterB, counterA);
+
+		unsigned char* encrypted = new unsigned char[megabyte + Messenger::MESSAGE_INFO_SIZE];
+		CHECK(first.prepareMessageToSend(messageType, megabyte, reinterpret_cast<unsigned char *>(input), encrypted));
+
+		unsigned char* decrypted = new unsigned char[megabyte];
+		unsigned char receivedMessageType = 0;
+		CHECK(second.parseReceivedMessage(encrypted, megabyte + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, decrypted));
+		CHECK(receivedMessageType == messageType);
+		CHECK(memcmp(input, decrypted, megabyte) == 0);
+
+		delete[] input;
+		delete[] encrypted;
+		delete[] decrypted;
+	}
+	else
+		std::cout << "Failed to open file" << std::endl;
+}
