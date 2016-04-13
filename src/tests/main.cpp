@@ -10,7 +10,7 @@
 #include <iostream>
 #include <fstream>
 /////////////////
-/*
+
 TEST_CASE("Database tests") {
 	SECTION("Constructor database") {
 		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/db_nok.db"), DatabaseAccessForbidden);
@@ -465,35 +465,39 @@ TEST_CASE("IPv4") {
 
 /*TEST_CASE("Performance") {
 	ServerManager myServer("test_database1.db");
-	myServer.clearDatabase();
+	//myServer.clearDatabase();
 	std::string tousNames[1000];
 	std::string tousPswrd[1000];
-	
-	SECTION("User registration") {
-		for (int i = 0; i < 1000; ++i) {
-			tousNames[i] = "name" + std::to_string(i);
-			tousPswrd[i] = "password" + std::to_string(i);
-			myServer.userRegistration(tousNames[i], tousPswrd[i]);
-		}
+	std::vector<Client*> clients;
+	Client *client;
+	for (int i = 0; i < 1000; ++i) {
+		tousNames[i] = "name" + std::to_string(i);
+		tousPswrd[i] = "password" + std::to_string(i);
 	}
-	SECTION("User loginn, logout") {
-		for (int i = 0; i < 1000; ++i) {
-			Client *client = myServer.clientConnect(i);
-			myServer.clientLogIn(client, tousNames[i], tousPswrd[i]);
-			myServer.clientLogOut(client);
-		}
+
+	//for (int i = 0; i < 1000; ++i) {
+	//	myServer.userRegistration(tousNames[i], tousPswrd[i]);
+	//}
+
+	for (int i = 0; i < 1000; ++i) {
+		client = myServer.clientConnect(i);
+		clients.push_back(client);
+		myServer.clientLogIn(client, tousNames[i], tousPswrd[i]);
+		//std::cout << tousNames[i] << " " << tousPswrd[i] << std::endl;
 	}
+
+	for (int i = 0; i < 999; ++i) {
+		int var = rand() % (999 - i) + 1;
+		client = clients[var];
+		myServer.clientLogOut(client);
+		clients.erase(clients.begin() + var);
+		//std::cout << var << std::endl;
+	}
+	myServer.clientLogOut(clients[0]);
 }*/
 
-TEST_CASE("profiling 1 MB") {
-	
-	std::ifstream file;
-	file.open("sample.pdf", std::ifstream::binary);
-	if (file.is_open()) {
-		const unsigned long megabyte = 1048576;
-		char* input = new char[megabyte];
-		file.read(input, megabyte);
-		file.close();
+/*TEST_CASE("Send/Receive message2") {
+	SECTION("send and receive2") {
 		unsigned char key[32] = { 0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
 			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08,
 			0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
@@ -503,26 +507,40 @@ TEST_CASE("profiling 1 MB") {
 			0x64, 0x3a, 0x8c, 0xdc, 0xbf, 0xe5, 0xc0, 0xc9,
 			0x75, 0x98, 0xa2, 0xbd, 0x25, 0x55, 0xd1, 0xaa };
 
-		unsigned char messageType = 21;
-
 		uint32_t counterA = 0x1368f2;
 		uint32_t counterB = 0xfa5372;
 		Messenger first("first", 6888, key, iv, counterA, counterB);
 		Messenger second("second", 6777, key, iv, counterB, counterA);
 
-		unsigned char* encrypted = new unsigned char[megabyte + Messenger::MESSAGE_INFO_SIZE];
-		CHECK(first.prepareMessageToSend(messageType, megabyte, reinterpret_cast<unsigned char *>(input), encrypted));
+		FILE *input, *test;
 
-		unsigned char* decrypted = new unsigned char[megabyte];
-		unsigned char receivedMessageType = 0;
-		CHECK(second.parseReceivedMessage(encrypted, megabyte + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, decrypted));
-		CHECK(receivedMessageType == messageType);
-		CHECK(memcmp(input, decrypted, megabyte) == 0);
+		for (int i = 0; i < 20; ++i) {
+			input = fopen("test.txt", "rb");
+			unsigned char messageType = 21;
+			fseek(input, 0, SEEK_END);
+			size_t filesize = ftell(input);
+			rewind(input);
+			unsigned char* messageForSend = new unsigned char[filesize];
 
-		delete[] input;
-		delete[] encrypted;
-		delete[] decrypted;
+			fread(messageForSend, sizeof(char), filesize, input);
+
+			messageForSend[i % filesize] = 'l';
+			messageForSend[i % 45] = 'p';
+			messageForSend[i % 85] = 'k';
+
+			unsigned char* bytesToSend = new unsigned char[filesize + Messenger::MESSAGE_INFO_SIZE];
+			CHECK(first.prepareMessageToSend(messageType, filesize, (const unsigned char*)messageForSend, bytesToSend));
+			CHECK(memcmp(messageForSend, bytesToSend, filesize) != 0);
+
+			unsigned char* receivedMessage = new unsigned char[filesize];
+			unsigned char receivedMessageType = 0;
+			second.parseReceivedMessage(bytesToSend, filesize + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, receivedMessage);
+			CHECK(memcmp(receivedMessage, messageForSend, filesize) == 0);
+
+			delete[] bytesToSend;
+			delete[] receivedMessage;
+			delete[] messageForSend;
+			fclose(input);
+		}
 	}
-	else
-		std::cout << "Failed to open file" << std::endl;
-}
+}*/
