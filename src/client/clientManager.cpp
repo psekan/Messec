@@ -4,7 +4,7 @@
 
 #include "clientManager.h"
 
-ClientManager::ClientManager(std::function<void(ConnectionErrors)> connectionLostCallback, std::function<void(std::string, bool)> userChangeStatusCallback, std::function<bool(std::string)> newRequestCallback, std::function<void(std::string)> requestRejectedCallback, std::function<void(std::string, Messenger&)> newCommunicationStartedCallback) {
+ClientManager::ClientManager(std::function<void(ConnectionErrors)> connectionLostCallback, std::function<void(std::string, bool)> userChangeStatusCallback, std::function<bool(std::string)> newRequestCallback, std::function<void(std::string)> requestRejectedCallback, std::function<void(std::string, Messenger*)> newCommunicationStartedCallback) {
 	m_connectionLostCallback = connectionLostCallback;
 	m_newCommunicationStartedCallback = newCommunicationStartedCallback;
 	m_newRequestCallback = newRequestCallback;
@@ -31,8 +31,8 @@ void ClientManager::disconnect() {
 
 bool ClientManager::signIn(std::string userName, std::string password) {
 	//Message schema: type[1], userNameLenght[1], userName[userNameLenght], passwordLenght[1], password[passwordLenght]
-	unsigned char userNameSize = (userName.size() >= 256 ? 255 : userName.size());
-	unsigned char passwordSize = (password.size() >= 256 ? 255 : password.size());
+	unsigned char userNameSize = (unsigned char)(userName.size() >= 256 ? 255 : userName.size());
+	unsigned char passwordSize = (unsigned char)(password.size() >= 256 ? 255 : password.size());
 	unsigned char* message = new unsigned char[3 + userNameSize + passwordSize];
 	memcpy(message, &MESSAGE_TYPE_SIGNIN, 1);
 	memcpy(message + 1, &userNameSize, 1);
@@ -46,8 +46,8 @@ bool ClientManager::signIn(std::string userName, std::string password) {
 
 bool ClientManager::logIn(std::string userName, std::string password) {
 	//Message schema: type[1], userNameLenght[1], userName[userNameLenght], passwordLenght[1], password[passwordLenght]
-	unsigned char userNameSize = (userName.size() >= 256 ? 255 : userName.size());
-	unsigned char passwordSize = (password.size() >= 256 ? 255 : password.size());
+	unsigned char userNameSize = (unsigned char)(userName.size() >= 256 ? 255 : userName.size());
+	unsigned char passwordSize = (unsigned char)(password.size() >= 256 ? 255 : password.size());
 	unsigned char* message = new unsigned char[3 + userNameSize + passwordSize];
 	memcpy(message, &MESSAGE_TYPE_LOGIN, 1);
 	memcpy(message + 1, &userNameSize, 1);

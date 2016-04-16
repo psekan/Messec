@@ -10,9 +10,15 @@
 #include <mbedtls/rsa.h>
 #include "client.h"
 #include "database.h"
-#include <set>
+#include <set>#include <QtCore/qglobal.h>
 
-class ServerManager {
+#if defined(SERVER_LIBRARY)
+#  define SERVERSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define SERVERSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+class SERVERSHARED_EXPORT ServerManager {
     unsigned int m_socket;
     mbedtls_rsa_context m_rsaKey;
     std::vector<Client*> m_clients;

@@ -23,7 +23,7 @@ int generateRandomNumber(unsigned char* output, int output_len)
 	int result = 0;
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
-	char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed";
+	const char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed";
 
 	mbedtls_entropy_init(&entropy);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -74,7 +74,7 @@ void stringToUCHar(std::string &input, unsigned char* output)
 	size_t j = 0;
 	for (size_t i = 0; i < input.length(); i += char_conversion, ++j) {
 		byte = input.substr(i, char_conversion);
-		output[j] = strtol(byte.c_str(), nullptr, char_conversion * 8);
+		output[j] = (unsigned char)strtol(byte.c_str(), nullptr, char_conversion * 8);
 	}
 }
 

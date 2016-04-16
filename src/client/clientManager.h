@@ -11,10 +11,17 @@
 #include <mbedtls/rsa.h>
 #include "messenger.h"
 #include "../common/connectionErrors.h"
+#include <QtCore/qglobal.h>
 
-class ClientManager {
+#if defined(CLIENT_LIBRARY)
+#  define CLIENTSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define CLIENTSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+class CLIENTSHARED_EXPORT ClientManager {
     //Callbacks
-    std::function<void()> m_connectionLostCallback;
+    std::function<void(ConnectionErrors)> m_connectionLostCallback;
     std::function<void(std::string,bool)> m_userChangeStatusCallback;
     std::function<bool(std::string)> m_newRequestCallback;
     std::function<void(std::string)> m_requestRejectedCallback;
@@ -52,7 +59,7 @@ public:
                   std::function<void(std::string,bool)> userChangeStatusCallback,
                   std::function<bool(std::string)> newRequestCallback,
                   std::function<void(std::string)> requestRejectedCallback,
-                  std::function<void(std::string, Messenger&)> newCommunicationStartedCallback);
+                  std::function<void(std::string, Messenger*)> newCommunicationStartedCallback);
 
     /**
      * Connect client to server.

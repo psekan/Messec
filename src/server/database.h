@@ -7,12 +7,19 @@
 
 #include <string>
 #include "sqlite3.h"
+#include <QtCore/qglobal.h>
 
-class WrongDatabasePassword : public std::exception {};
+#if defined(SERVER_LIBRARY)
+#  define SERVERSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define SERVERSHARED_EXPORT Q_DECL_IMPORT
+#endif
 
-class DatabaseAccessForbidden : public std::exception {};
+class SERVERSHARED_EXPORT WrongDatabasePassword : public std::exception {};
 
-class UserDatabaseRow
+class SERVERSHARED_EXPORT DatabaseAccessForbidden : public std::exception {};
+
+class SERVERSHARED_EXPORT UserDatabaseRow
 {
 	bool m_exists;
 	std::string name;
@@ -58,7 +65,7 @@ public:
 	}
 };
 
-class Database
+class SERVERSHARED_EXPORT Database
 {
 	char* lastError = nullptr;
 	sqlite3 *db;

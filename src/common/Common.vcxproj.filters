@@ -19,12 +19,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="ipv4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="catch.hpp">
+    <ClInclude Include="connectionErrors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ipv4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -9,10 +9,17 @@
 #include <string>
 #include <functional>
 #include "../common/connectionErrors.h"
+#include <QtCore/qglobal.h>
+
+#if defined(CLIENT_LIBRARY)
+#  define CLIENTSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define CLIENTSHARED_EXPORT Q_DECL_IMPORT
+#endif
 
 class ClientManager;
 
-class Messenger {
+class CLIENTSHARED_EXPORT Messenger {
     //Callbacks
     std::function<void(Messenger&, ConnectionErrors)> m_connectionLostCallback;
     std::function<void(Messenger&)> m_communicationEndedCallback;

@@ -7,8 +7,15 @@
 
 #include <string>
 #include "../common/ipv4.h"
+#include <QtCore/qglobal.h>
 
-class ServerManager;
+#if defined(SERVER_LIBRARY)
+#  define SERVERSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define SERVERSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+class SERVERSHARED_EXPORT ServerManager;
 
 class Client {
     //Boolean values
