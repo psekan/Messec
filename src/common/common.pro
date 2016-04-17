@@ -4,6 +4,7 @@ QT += network
 
 CONFIG += c++11 
 CONFIG += staticlib
+QMAKE_CXXFLAGS += -std=c++11
 
 TARGET = common
 TEMPLATE = lib    

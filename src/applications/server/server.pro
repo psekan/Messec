@@ -3,7 +3,8 @@ QT -= gui
 QT += network
 
 CONFIG += c++11 
-CONFIG += console 
+CONFIG += console  
+QMAKE_CXXFLAGS += -std=c++11
 
 TARGET = serverApplication
 TEMPLATE = app

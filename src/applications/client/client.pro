@@ -4,6 +4,7 @@ QT += network
 
 CONFIG += c++11   
 CONFIG += console
+QMAKE_CXXFLAGS += -std=c++11
 
 TARGET = clientApplication
 TEMPLATE = app

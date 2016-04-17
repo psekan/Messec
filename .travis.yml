@@ -26,11 +26,10 @@ install:
       && sudo apt-add-repository -y ppa:ubuntu-toolchain-r/test
       && sudo apt-add-repository -y ppa:beineri/opt-qt542
       && sudo apt-get -qq update
-      && sudo apt-get -qq install g++-4.8 libc6-i386 qt54tools qt54svg qt54webkit qt54script
+      && sudo apt-get -qq install g++-4.8 qt54script
       && export CXX="g++-4.8"
       && export CC="gcc-4.8"   
   - make -C /usr/local/share/mbedtls no_test 
 script:     
   - qmake messec.pro
   - make
-  - ./src/tests/tests
