@@ -31,5 +31,5 @@ install:
       && export CC="gcc-4.8"   
   - make -C /usr/local/share/mbedtls no_test 
 script:     
-  - qmake messec.pro
+  - qmake QMAKE_CXX=g++-4.8 QMAKE_C=gcc-4.8 messec.pro
   - make
