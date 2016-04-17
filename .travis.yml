@@ -1,14 +1,15 @@
 language: cpp
 
 compiler:
-  - gcc
+  - gcc  
+  - clang
   
 before_install:
   - wget https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.1.4.tar.gz
   - tar -zxvf mbedtls-2.1.4.tar.gz
-  - sudo mv mbedtls-mbedtls-2.1.4 /usr/local/share/mbedtls
+  - sudo mv mbedtls-mbedtls-2.1.4 /usr/local/share/mbedtls 
 install:
-  - make -C /usr/local/share/mbedtls no_test
+  - make -C /usr/local/share/mbedtls no_test       
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 addons:
   apt:
@@ -18,8 +19,9 @@ addons:
     packages:
     - gcc-4.8
     - g++-4.8
-    - qt55base
-script: 
+    - qt55base  
+    - clang
+script:     
   - qmake messec.pro
   - make
   - ./src/tests/tests
