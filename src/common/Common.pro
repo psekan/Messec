@@ -4,7 +4,7 @@ QT += network
 
 CONFIG += c++11
 
-TARGET = Common
+TARGET = common
 TEMPLATE = lib
 DEFINES += COMMON_LIBRARY
 

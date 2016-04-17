@@ -4,7 +4,7 @@ QT += network
 
 CONFIG += c++11
 
-TARGET = ServerApplication
+TARGET = serverApplication
 CONFIG += console
 CONFIG -= app_bundle
 
@@ -12,13 +12,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../server/release/ -lServer
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../server/debug/ -lServer
-else:unix: LIBS += -L$$OUT_PWD/../../server/ -lServer
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../server/release/ -lserver
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../server/debug/ -lserver
+else:unix: LIBS += -L$$OUT_PWD/../../server/ -lserver
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../common/release/ -lCommon
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../common/debug/ -lCommon
-else:unix: LIBS += -L$$OUT_PWD/../../common/ -lCommon
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../common/release/ -lcommon
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../common/debug/ -lcommon
+else:unix: LIBS += -L$$OUT_PWD/../../common/ -lcommon
 
 INCLUDEPATH += $$PWD/../../server
 DEPENDPATH += $$PWD/../../server

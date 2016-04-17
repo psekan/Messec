@@ -4,7 +4,7 @@ QT += network
 
 CONFIG += c++11
 
-TARGET = Client
+TARGET = client
 CONFIG += console
 CONFIG -= app_bundle
 
@@ -16,9 +16,9 @@ SOURCES += messenger.cpp \
 HEADERS += messenger.h\
            clientManager.h
         
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../common/release/ -lCommon -lmbedTLS
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../common/debug/ -lCommon -lmbedTLS
-else:unix: LIBS += -L$$OUT_PWD/../common/ -lCommon -lmbedTLS
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../common/release/ -lcommon -lmbedTLS
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../common/debug/ -lcommon -lmbedTLS
+else:unix: LIBS += -L$$OUT_PWD/../common/ -lcommon -lmbedTLS
 
 INCLUDEPATH += $$PWD/../common
 DEPENDPATH += $$PWD/../common
