@@ -67,7 +67,7 @@ public:
 
 class SERVERSHARED_EXPORT Database
 {
-	char* lastError = nullptr;
+	char* lastError;
 	sqlite3 *db;
 
 	void freeLastError();
