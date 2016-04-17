@@ -20,6 +20,6 @@ addons:
     - g++-4.8
     - qt55base
 script: 
-  - qmake Messec.pro
+  - qmake messec.pro
   - make
   - ./Tests
