@@ -1,16 +1,22 @@
 TEMPLATE = subdirs  
 
 SUBDIRS += \
+    Common \
     Server \
-    Client \
+    Client \   
+    ServerApplication \
+    ClientApplication \
     Tests  \
-    Common
-    
+      
+Common.subdir  = src/common
 Server.subdir = src/server
 Client.subdir  = src/client
+ServerApplication.subdir = src/applications/server
+ClientApplication.subdir  = src/applications/client
 Tests.subdir  = src/tests
-Common.subdir  = src/common
     
 Server.depends = Common
-Client.depends = Common
+Client.depends = Common    
+ServerApplication.depends = Server
+ClientApplication.depends = Client
 Tests.depends = Server Client 

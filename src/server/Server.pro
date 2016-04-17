@@ -8,10 +8,10 @@ CONFIG += console
 QT += network
 CONFIG -= app_bundle
 
-TEMPLATE = app lib
+TEMPLATE = lib
 DEFINES += SERVER_LIBRARY
 
-SOURCES += main.cpp \
+SOURCES += \
     serverManager.cpp \
     client.cpp \
     database.cpp \

@@ -8,11 +8,10 @@ TARGET = Client
 CONFIG += console
 CONFIG -= app_bundle
 
-TEMPLATE = app lib
+TEMPLATE = lib
 DEFINES += CLIENT_LIBRARY
 
-SOURCES += main.cpp \
-           messenger.cpp \
+SOURCES += messenger.cpp \
            clientManager.cpp      
 HEADERS += messenger.h\
            clientManager.h

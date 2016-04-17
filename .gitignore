@@ -29,18 +29,22 @@
 
 #Clion
 .idea
-
-#Visual Studio Files
-Messec.sdf
-Messec.opensdf
-Messec.VC.opendb
+                      
+#Visual Studio Files 
+.vs
 **/Debug/
 **/Release/
 **/x64/
-**/*.vcxproj.user
-.vs
+**/Win32/
+*.vcxproj 
+*.vcxproj.user 
+*.vcxproj.filters 
+*.sdf
+*.opensdf
+*.VC.opendb
 *.psess
 *.vsp
+*.sln 
 
 #Tests databases
 src/tests/*.db
