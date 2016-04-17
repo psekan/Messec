@@ -3,12 +3,10 @@ QT -= gui
 QT += network
 
 CONFIG += c++11 
-QMAKE_CXXFLAGS += -std=c++0x
+CONFIG += staticlib
 
 TARGET = common
-TEMPLATE = lib      
-CONFIG += staticlib
-DEFINES += COMMON_LIBRARY
+TEMPLATE = lib    
 
 SOURCES += ipv4.cpp
 HEADERS += ipv4.h\

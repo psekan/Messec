@@ -3,15 +3,10 @@ QT -= gui
 QT += network
 
 CONFIG += c++11 
-QMAKE_CXXFLAGS += -std=c++0x
-
-TARGET = client
-CONFIG += console
-CONFIG -= app_bundle 
 CONFIG += staticlib
 
+TARGET = client
 TEMPLATE = lib
-DEFINES += CLIENT_LIBRARY
 
 SOURCES += messenger.cpp \
            clientManager.cpp      

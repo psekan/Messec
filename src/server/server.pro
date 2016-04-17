@@ -1,14 +1,11 @@
 QT += core
-QT -= gui
+QT -= gui  
+QT += network
 
-CONFIG += c++11
-QMAKE_CXXFLAGS += -std=c++0x
+CONFIG += c++11  
+CONFIG += staticlib
 
 TARGET = server
-CONFIG += console
-QT += network
-CONFIG -= app_bundle  
-CONFIG += staticlib
 
 TEMPLATE = lib
 DEFINES += SERVER_LIBRARY

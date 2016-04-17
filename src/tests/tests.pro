@@ -1,13 +1,12 @@
 QT += core
-QT -= gui
-CONFIG += c++11 
-QMAKE_CXXFLAGS += -std=c++0x
+QT -= gui  
+QT += network
+
+CONFIG += c++11     
+CONFIG += console  
+CONFIG += testcase
 
 TARGET = tests
-CONFIG += console
-QT += network
-CONFIG -= app_bundle
-
 TEMPLATE = app
 
 SOURCES += main.cpp
@@ -25,6 +24,11 @@ win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../common/release/ -lc
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../common/debug/ -lcommon
 else:unix: LIBS += -L$$OUT_PWD/../common/ -lcommon
 
+win32:CONFIG(release, debug|release): LIBS += -lmbedTLS
+else:win32:CONFIG(debug, debug|release): LIBS += -lmbedTLS
+else:unix: LIBS += -L/usr/local/share/mbedtls/library/ -pthread -lmbedcrypto -ldl
+
+unix: INCLUDEPATH += /usr/local/share/mbedtls/include/
 INCLUDEPATH += $$PWD/../server
 DEPENDPATH += $$PWD/../server
 

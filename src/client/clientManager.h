@@ -11,15 +11,8 @@
 #include <mbedtls/rsa.h>
 #include "messenger.h"
 #include "../common/connectionErrors.h"
-#include <QtCore/qglobal.h>
 
-#if defined(CLIENT_LIBRARY)
-#  define CLIENTSHARED_EXPORT Q_DECL_EXPORT
-#else
-#  define CLIENTSHARED_EXPORT Q_DECL_IMPORT
-#endif
-
-class CLIENTSHARED_EXPORT ClientManager {
+class ClientManager {
     //Callbacks
     std::function<void(ConnectionErrors)> m_connectionLostCallback;
     std::function<void(std::string,bool)> m_userChangeStatusCallback;
