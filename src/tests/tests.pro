@@ -4,7 +4,8 @@ QT += network
 
 CONFIG += c++11     
 CONFIG += console  
-CONFIG += testcase
+CONFIG += testcase   
+QMAKE_CXXFLAGS += -std=c++11
 
 TARGET = tests
 TEMPLATE = app
