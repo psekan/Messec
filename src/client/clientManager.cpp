@@ -3,6 +3,7 @@
 //
 
 #include "clientManager.h"
+#include <cstring>
 
 ClientManager::ClientManager(std::function<void(ConnectionErrors)> connectionLostCallback, std::function<void(std::string, bool)> userChangeStatusCallback, std::function<bool(std::string)> newRequestCallback, std::function<void(std::string)> requestRejectedCallback, std::function<void(std::string, Messenger*)> newCommunicationStartedCallback) {
 	m_connectionLostCallback = connectionLostCallback;
