@@ -7,7 +7,8 @@ QMAKE_CXXFLAGS += -std=c++0x
 TARGET = server
 CONFIG += console
 QT += network
-CONFIG -= app_bundle
+CONFIG -= app_bundle  
+CONFIG += staticlib
 
 TEMPLATE = lib
 DEFINES += SERVER_LIBRARY

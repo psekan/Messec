@@ -6,7 +6,8 @@ CONFIG += c++11
 QMAKE_CXXFLAGS += -std=c++0x
 
 TARGET = common
-TEMPLATE = lib
+TEMPLATE = lib      
+CONFIG += staticlib
 DEFINES += COMMON_LIBRARY
 
 SOURCES += ipv4.cpp
