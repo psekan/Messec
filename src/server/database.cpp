@@ -5,8 +5,6 @@
 #include "database.h"
 #include <cstring>
 
-Database::last
-
 Database::Database(std::string filePath) {
 	if (sqlite3_open(filePath.c_str(), &db) != SQLITE_OK) {
 		throw DatabaseAccessForbidden();
