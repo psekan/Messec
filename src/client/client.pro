@@ -2,7 +2,8 @@ QT += core
 QT -= gui
 QT += network
 
-CONFIG += c++11
+CONFIG += c++11 
+QMAKE_CXXFLAGS += -std=c++11
 
 TARGET = client
 CONFIG += console
