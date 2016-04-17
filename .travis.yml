@@ -22,4 +22,4 @@ addons:
 script: 
   - qmake messec.pro
   - make
-  - ./Tests
+  - ./tests

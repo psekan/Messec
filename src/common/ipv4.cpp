@@ -3,6 +3,7 @@
 //
 #define _CRT_SECURE_NO_WARNINGS
 #include "ipv4.h"
+#include "stdio.h"
 
 /**
  * Create IPv4 object from array of numbers in interval [0-255]
