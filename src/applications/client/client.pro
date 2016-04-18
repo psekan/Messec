@@ -10,6 +10,7 @@ TARGET = clientApplication
 TEMPLATE = app
 
 SOURCES += main.cpp   
+HEADERS += controller.h
         
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../client/release/ -lclient
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../client/debug/ -lclient

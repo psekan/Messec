@@ -4,6 +4,7 @@
 #include "serverManager.h"
 #include <iostream>
 #include <algorithm>
+#include "messageTypes.h"
 #include "mbedtls/pkcs5.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
@@ -94,38 +95,33 @@ void ServerManager::createCommunicationBetween(Client* communicationServer, Clie
 	//TODO
 }
 
-ServerManager::ServerManager(std::string dbFilePath) : m_database(dbFilePath), m_isRunning(false) {
-
+ServerManager::ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent) : QTcpServer(parent), port(port), m_database(dbFilePath) {
+	//TODO init rsa
 }
 
-bool ServerManager::start(int port, unsigned keySize) {
-	//TODO
-	m_isRunning = true;
-
-	return true;
+void ServerManager::start()
+{
+	if (!this->listen(QHostAddress::Any, port)) {
+		qDebug() << "Server start failed";
+		qDebug() << this->errorString();
+		emit finished();
+		exit(0);
+	}
 }
 
-void ServerManager::stop() {
-	//TODO
-	m_isRunning = false;
+void ServerManager::incomingConnection(qintptr handle)
+{
+	Client* client = clientConnect(handle);
+	connect(client, SIGNAL(disconnect()), this, SLOT(clientDisconnect()));
+	connect(client, SIGNAL(finished()), this, SLOT(clientDisconnect()));
+	connect(client, SIGNAL(logIn(std::string userName, std::string password)), this, SLOT(clientLogIn(std::string userName, std::string password)));
+	connect(client, SIGNAL(signIn(std::string userName, std::string password)), this, SLOT(clientSignIn(std::string userName, std::string password)));
+	connect(client, SIGNAL(logOut()), this, SLOT(clientLogOut()));
+	connect(client, SIGNAL(getOnlineUsers()), this, SLOT(getOnlineUsers()));
 }
 
 void ServerManager::clearDatabase() {
 	m_database.clearDatabase();
-}
-
-std::vector<std::string> ServerManager::getOnlineUsers() {
-	std::vector<std::string> onlineClients;
-
-	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
-	{
-		if ((*it)->isLoggedIn())
-		{
-			onlineClients.push_back((*it)->m_userName);
-		}
-	}
-
-	return onlineClients;
 }
 
 void ServerManager::removeUserFromDb(std::string userName) {
@@ -142,16 +138,11 @@ void ServerManager::kickUser(std::string userName) {
 	{
 		if (userName.compare((*it)->m_userName) == 0)
 		{
-			(*it)->sendMessage(message.length(), reinterpret_cast<const unsigned char*>(message.c_str()));
-			clientLogOut(*it);
-			clientDisconnect(*it);
+			Client *client = *it;
+			client->disconnect();
 			return;
 		}
 	}
-}
-
-bool ServerManager::isRunning() const {
-	return m_isRunning;
 }
 
 bool ServerManager::userRegistration(std::string userName, std::string password) {
@@ -227,55 +218,92 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 	return false;
 }
 
-Client* ServerManager::clientConnect(unsigned socket) {
-	Client* newClient = new Client(socket);
+Client* ServerManager::clientConnect(qintptr socket) {
+	Client* newClient = new Client(socket, parent());
+	newClient->start();
 	m_clients.push_back(newClient);
 	return newClient;
 }
 
-void ServerManager::clientDisconnect(Client* client) {
+void ServerManager::clientDisconnect() {
+	Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
 		return;
 	}
 
-	std::string message = "You will be disconected\n";
-
-	client->sendMessage(message.length(), reinterpret_cast<const unsigned char*>(message.c_str()));
 	auto it = std::find(m_clients.begin(), m_clients.end(), client);
 	m_clients.erase(it);
 	delete client;
 }
 
-bool ServerManager::clientLogIn(Client* client, std::string userName, std::string password) {
-	if (client == nullptr)
-	{
-		std::cerr << "Client is null\n";
-		return false;
-	}
-
-	std::string message;
-
-	if (userAuthentication(userName, password))
-	{
-		message = "Login successful\n";
-		client->sendMessage(message.length(), reinterpret_cast<const unsigned char*>(message.c_str()));
-		client->logInUser(userName);
-		return true;
-	}
-	message = "Invalid login data\n";
-	client->sendMessage(message.length(), reinterpret_cast<const unsigned char*>(message.c_str()));
-	return false;
-}
-
-void ServerManager::clientLogOut(Client* client) {
+void ServerManager::clientLogIn(std::string userName, std::string password) {
+	Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
 		return;
 	}
-	std::string message = "You were logged off\n";
-	client->sendMessage(message.length(), reinterpret_cast<const unsigned char*>(message.c_str()));
+
+	if (userAuthentication(userName, password))
+	{
+		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, "");
+		client->logInUser(userName);
+	}
+	else
+	{
+		client->sendMessage(MESSAGETYPE_LOGIN_FAIL, "");		
+	}
+}
+
+void ServerManager::clientSignIn(std::string userName, std::string password) {
+	Client* client = dynamic_cast<Client*>(sender());
+	if (client == nullptr)
+	{
+		std::cerr << "Client is null\n";
+		return;
+	}
+
+	if (userRegistration(userName, password))
+	{
+		client->sendMessage(MESSAGETYPE_SIGNIN_SUCCESS, "");
+		client->logInUser(userName);
+	}
+	else
+	{
+		client->sendMessage(MESSAGETYPE_SIGNIN_FAIL, "");
+	}
+}
+
+void ServerManager::clientLogOut() {
+	Client* client = dynamic_cast<Client*>(sender());
+	if (client == nullptr)
+	{
+		std::cerr << "Client is null\n";
+		return;
+	}
 	client->logOutUser();
+}
+
+void ServerManager::getOnlineUsers() {
+	Client* client = dynamic_cast<Client*>(sender());
+	if (client == nullptr)
+	{
+		std::cerr << "Client is null\n";
+		return;
+	}
+
+	QString message;
+	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
+	{
+		if ((*it)->isLoggedIn())
+		{
+			if (it != m_clients.begin()) {
+				message += "|#|";
+			}
+			message += QString::fromStdString((*it)->m_userName);
+		}
+	}
+	client->sendMessage(MESSAGETYPE_GET_ONLINE_USERS, message);
 }

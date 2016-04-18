@@ -5,17 +5,22 @@
 #ifndef MESSEC_SERVERMANAGER_H
 #define MESSEC_SERVERMANAGER_H
 
+#include <QObject>
+#include <QTcpServer>
 #include <string>
 #include <vector>
 #include <mbedtls/rsa.h>
 #include "client.h"
 #include "database.h"
 
-class ServerManager {
+class ServerManager : public QTcpServer
+{
+	Q_OBJECT
+	qint16 port;
+	
     unsigned int m_socket;
     mbedtls_rsa_context m_rsaKey;
     std::vector<Client*> m_clients;
-    bool m_isRunning;
 	Database m_database;
 
     /**
@@ -45,25 +50,19 @@ class ServerManager {
      */
     void createCommunicationBetween(Client* communicationServer, Client* communicationClient);
 public:
+	/**
+	* @brief start Method starts infinite loop
+	*/
+	void start();
+
     /**
      * Create new server manager on sqlite database.
      * @exception DatabaseAccessForbidden if cannot read or create database file
      * @param std::string path to sqlite database
+     * @param qint16 port on tcp protocol
+     * @param quint16 length of rsa key in bits
      */
-    ServerManager(std::string dbFilePath);
-
-    /**
-     * Start server on port and public RSA key with specific length.
-     * @param int port on tcp protocol
-     * @param unsigned int length of rsa key in bits
-     * @return bool false if port is not available
-     */
-    bool start(int port, unsigned int keySize);
-
-    /**
-     * Stop server.
-     */
-    void stop();
+    explicit ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent = 0);
 
     /**
      * Clear whole database, all users.
@@ -71,11 +70,6 @@ public:
      */
     void clearDatabase();
 
-    /**
-     * Return all names of online users.
-     * @return std::vector<std::string> container of users names
-     */
-    std::vector<std::string> getOnlineUsers();
 	/**
 	 * Remove specific user from database
 	 * @param std::string user name
@@ -87,12 +81,6 @@ public:
      * @param std::string name of user.
      */
     void kickUser(std::string userName);
-
-    /**
-     * Check if server is running.
-     * @return bool
-     */
-    bool isRunning() const;
 
 	/**
 	 * Add new user to database.
@@ -112,16 +100,31 @@ public:
 
 	/**
 	 * New client is connected
-	 * @param unsigned int socket
-	 * @return Client& new client 
+	 * @param qintptr socket
+	 * @return Client* new client 
 	 */
-	Client* clientConnect(unsigned int socket);
+	Client* clientConnect(qintptr socket);
 
+protected:
+	/**
+	 * @brief incomingConnection Method is evoked when new connection is established
+	 * Method starts new thread which handles communication with client
+	 * @param handle socket descriptor assigned to new connection
+	 */
+	void incomingConnection(qintptr handle) override;
+
+signals:
+	/**
+	 * @brief finished Signal emited when the server was closed by error
+	 */
+	void finished();
+
+public slots:
 	/**
 	 * Disconnect client
-	 * @param Client* client, after call this function, pointer will be invalid
 	 */
-	void clientDisconnect(Client* client);
+	void clientDisconnect();
+	
 	/**
 	 * Log in client as user
 	 * @param Client& client object
@@ -129,12 +132,23 @@ public:
 	 * @param std::string user password
 	 * @return bool false if cannot log in user
 	 */
-	bool clientLogIn(Client* client, std::string userName, std::string password);
+	void clientLogIn(std::string userName, std::string password);
+
+	/**
+	* Sign in client as user
+	* @param Client& client object
+	* @param std::string user name
+	* @param std::string user password
+	* @return bool false if cannot log in user
+	*/
+	void clientSignIn(std::string userName, std::string password);
 
 	/**
 	 * Log out client as some user
 	 */
-	void clientLogOut(Client* client);
+	void clientLogOut();
+
+	void getOnlineUsers();
 };
 
 #endif //MESSEC_SERVERMANAGER_H

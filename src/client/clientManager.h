@@ -5,27 +5,31 @@
 #ifndef MESSEC_CLIENTMANAGER_H
 #define MESSEC_CLIENTMANAGER_H
 
+#include <QTcpSocket>
 #include <string>
 #include <vector>
 #include <functional>
 #include <mbedtls/rsa.h>
 #include "messenger.h"
 #include "../common/connectionErrors.h"
+#include <QThread>
 
-class ClientManager {
+class ClientManager : public QThread {
+	Q_OBJECT
+
     //Callbacks
-    std::function<void(ConnectionErrors)> m_connectionLostCallback;
+    /*std::function<void(ConnectionErrors)> m_connectionLostCallback;
     std::function<void(std::string,bool)> m_userChangeStatusCallback;
     std::function<bool(std::string)> m_newRequestCallback;
     std::function<void(std::string)> m_requestRejectedCallback;
-    std::function<void(std::string, Messenger*)> m_newCommunicationStartedCallback;
+    std::function<void(std::string, Messenger*)> m_newCommunicationStartedCallback;*/
 
     //Boolean values
     bool m_isConnected;
     bool m_isLoggedIn;
 
     //Connection with server
-    unsigned int m_serverSocket;
+	QTcpSocket* m_serverSocket;
     mbedtls_rsa_context m_serverKey;
     unsigned char m_aesKey[32];
 
@@ -35,10 +39,7 @@ class ClientManager {
     //Online users
     std::vector<std::string> m_onlineUsers;
 
-	//Constants
-	const static unsigned char MESSAGE_TYPE_SIGNIN = 1;
-	const static unsigned char MESSAGE_TYPE_LOGIN = 2;
-	const static unsigned char MESSAGE_TYPE_LOGOUT = 3;
+	void run() override;
 public:
     /**
      * Create new client manager and set callbacks. First argument in all callbacks is user name.
@@ -48,11 +49,14 @@ public:
      * @param requestRejectedCallback          User reject this client request for communication.
      * @param newCommunicationStartedCallback  Request was accepted and communication started. Communication is handled with Messenger in second argument.
      */
-    ClientManager(std::function<void(ConnectionErrors)> connectionLostCallback,
+    /*ClientManager(std::function<void(ConnectionErrors)> connectionLostCallback,
                   std::function<void(std::string,bool)> userChangeStatusCallback,
                   std::function<bool(std::string)> newRequestCallback,
                   std::function<void(std::string)> requestRejectedCallback,
-                  std::function<void(std::string, Messenger*)> newCommunicationStartedCallback);
+                  std::function<void(std::string, Messenger*)> newCommunicationStartedCallback);*/
+	ClientManager(QObject *parent = 0);
+
+	~ClientManager();
 
     /**
      * Connect client to server.
@@ -120,6 +124,8 @@ public:
      * @return bool false if user is not logged in
      */
     bool startCommunicationWith(std::string userName);
+signals:
+	void connectionLost();
 };
 
 

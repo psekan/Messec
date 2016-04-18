@@ -1,7 +1,12 @@
-#include <iostream>
+#include <QCoreApplication>
+#include "controller.h"
 
-using namespace std;
+int main(int argc, char *argv[])
+{
+	QCoreApplication application(argc, argv);
 
-int main() {
-    return 0;
+	Controler controller(&application);
+	QObject::connect(&controller, SIGNAL(finished()), &application, SLOT(quit()));
+	controller.start();
+	return application.exec(); 
 }

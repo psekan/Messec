@@ -7,9 +7,7 @@ CONFIG += staticlib
 QMAKE_CXXFLAGS += -std=c++11
 
 TARGET = server
-
 TEMPLATE = lib
-DEFINES += SERVER_LIBRARY
 
 SOURCES += \
     serverManager.cpp \
