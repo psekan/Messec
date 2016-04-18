@@ -101,6 +101,7 @@ ServerManager::ServerManager(std::string dbFilePath, qint16 port, quint16 keySiz
 
 void ServerManager::start()
 {
+	qDebug() << "Server start on " << port;
 	if (!this->listen(QHostAddress::Any, port)) {
 		qDebug() << "Server start failed";
 		qDebug() << this->errorString();

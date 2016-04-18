@@ -30,6 +30,8 @@ public:
 	}
 
 	void run() override {
+		connect(client, SIGNAL(signalconnected(bool)), this, SLOT(signalconnected(bool)));
+		connect(this, SIGNAL(signalconnect(QString,int)), client, SLOT(signalconnect(QString,int)));
 		string command;
 		while (1) {
 			cin >> command;
@@ -44,15 +46,7 @@ public:
 				cin >> ipaddr;
 				cout << "Write host port: ";
 				cin >> port;
-
-				if (client->connect(ipaddr, port))
-				{
-					cout << "Successfully connected" << endl;
-				}
-				else
-				{
-					cout << "Connect fail" << endl;
-				}
+				emit signalconnect(QString(ipaddr.c_str()), port);
 			}
 			else if (command == "disconnect") {
 				client->disconnect();
@@ -103,6 +97,22 @@ public:
 		}
 		exit(0);
 	}
+
+signals:
+	void signalconnect(QString addr, int port);
+
+public slots:
+	void signalconnected(bool isConnected)
+	{
+		if (isConnected)
+		{
+			cout << "Successfully connected" << endl;
+		}
+		else
+		{
+			cout << "Connect fail" << endl;
+		}
+	}	
 };
 
 

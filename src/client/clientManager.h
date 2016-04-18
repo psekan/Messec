@@ -59,14 +59,6 @@ public:
 	~ClientManager();
 
     /**
-     * Connect client to server.
-     * @param std::string IPv4 of server
-     * @param int tcp port number of server
-     * @return bool true if connection is successfully realized.
-     */
-    bool connect(std::string ip, int port);
-
-    /**
      * Check if client is connected to server.
      * @return bool true if connection is available
      */
@@ -126,6 +118,17 @@ public:
     bool startCommunicationWith(std::string userName);
 signals:
 	void connectionLost();
+
+	void signalconnected(bool isConnected);
+
+public slots:
+	/**
+	* Connect client to server.
+	* @param std::string IPv4 of server
+	* @param int tcp port number of server
+	* @return bool true if connection is successfully realized.
+	*/
+	void signalconnect(QString ip, int port);
 };
 
 

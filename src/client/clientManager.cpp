@@ -39,17 +39,18 @@ void ClientManager::run() {
 }
 
 
-bool ClientManager::connect(std::string ip, int port) {
+void ClientManager::signalconnect(QString ip, int port) {
 	m_serverSocket = new QTcpSocket(this);
-	QString qip(ip.c_str());
-	QHostAddress addr(qip);
+	QHostAddress addr(ip);
 	m_serverSocket->connectToHost(addr, port);
 	if (!m_serverSocket->waitForConnected()) {
-		std::cerr << "Could not connect to " << qip.toStdString() << ", " << addr.toString().toStdString() << std::endl;
-		return false;
+		std::cerr << "Could not connect to " << ip.toStdString() << ", " << addr.toString().toStdString() << std::endl;
+		emit signalconnected(false);
+		return;
 	}
 	m_isConnected = true;
-	return true;
+	emit signalconnected(true);
+	return;
 }
 
 bool ClientManager::isConnected() const {
