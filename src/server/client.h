@@ -87,7 +87,7 @@ signals:
 	* @param std::string user password
 	* @return bool false if cannot log in user
 	*/
-	bool logIn(std::string userName, std::string password);
+	void logIn(QString userName, QString password);
 
 	/**
 	* Log in client as user
@@ -96,14 +96,12 @@ signals:
 	* @param std::string user password
 	* @return bool false if cannot log in user
 	*/
-	bool signIn(std::string userName, std::string password);
+	void signIn(QString userName, QString password);
 
 	/**
 	  Log out client as some user
 	 */
 	void logOut();
-
-	void finished();
 
 	void getOnlineUsers();
 

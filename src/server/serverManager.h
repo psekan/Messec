@@ -5,6 +5,7 @@
 #ifndef MESSEC_SERVERMANAGER_H
 #define MESSEC_SERVERMANAGER_H
 
+#include <QtGlobal>
 #include <QObject>
 #include <QTcpServer>
 #include <string>
@@ -132,7 +133,7 @@ public slots:
 	 * @param std::string user password
 	 * @return bool false if cannot log in user
 	 */
-	void clientLogIn(std::string userName, std::string password);
+	void clientLogIn(QString userName, QString password);
 
 	/**
 	* Sign in client as user
@@ -141,7 +142,7 @@ public slots:
 	* @param std::string user password
 	* @return bool false if cannot log in user
 	*/
-	void clientSignIn(std::string userName, std::string password);
+	void clientSignIn(QString userName, QString password);
 
 	/**
 	 * Log out client as some user

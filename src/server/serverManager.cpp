@@ -115,8 +115,8 @@ void ServerManager::incomingConnection(qintptr handle)
 	Client* client = clientConnect(handle);
 	connect(client, SIGNAL(disconnect()), this, SLOT(clientDisconnect()));
 	connect(client, SIGNAL(finished()), this, SLOT(clientDisconnect()));
-	connect(client, SIGNAL(logIn(std::string userName, std::string password)), this, SLOT(clientLogIn(std::string userName, std::string password)));
-	connect(client, SIGNAL(signIn(std::string userName, std::string password)), this, SLOT(clientSignIn(std::string userName, std::string password)));
+	connect(client, SIGNAL(logIn(QString,QString)), this, SLOT(clientLogIn(QString,QString)));
+	connect(client, SIGNAL(signIn(QString,QString)), this, SLOT(clientSignIn(QString,QString)));
 	connect(client, SIGNAL(logOut()), this, SLOT(clientLogOut()));
 	connect(client, SIGNAL(getOnlineUsers()), this, SLOT(getOnlineUsers()));
 }
@@ -239,7 +239,7 @@ void ServerManager::clientDisconnect() {
 	delete client;
 }
 
-void ServerManager::clientLogIn(std::string userName, std::string password) {
+void ServerManager::clientLogIn(QString userName, QString password) {
 	Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
@@ -247,10 +247,10 @@ void ServerManager::clientLogIn(std::string userName, std::string password) {
 		return;
 	}
 
-	if (userAuthentication(userName, password))
+	if (userAuthentication(userName.toStdString(), password.toStdString()))
 	{
 		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, "");
-		client->logInUser(userName);
+		client->logInUser(userName.toStdString());
 	}
 	else
 	{
@@ -258,7 +258,7 @@ void ServerManager::clientLogIn(std::string userName, std::string password) {
 	}
 }
 
-void ServerManager::clientSignIn(std::string userName, std::string password) {
+void ServerManager::clientSignIn(QString userName, QString password) {
 	Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
@@ -266,10 +266,10 @@ void ServerManager::clientSignIn(std::string userName, std::string password) {
 		return;
 	}
 
-	if (userRegistration(userName, password))
+	if (userRegistration(userName.toStdString(), password.toStdString()))
 	{
 		client->sendMessage(MESSAGETYPE_SIGNIN_SUCCESS, "");
-		client->logInUser(userName);
+		client->logInUser(userName.toStdString());
 	}
 	else
 	{

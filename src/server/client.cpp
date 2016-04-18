@@ -4,6 +4,7 @@
 
 #include "client.h"
 #include "messageTypes.h"
+#include <QtGlobal>
 #include <QDataStream>
 #include <QHostAddress>
 
@@ -68,11 +69,11 @@ void Client::readData()
 	switch (messageType) {
 	case MESSAGETYPE_LOGIN:
 		input >> userName >> userPassword;
-		emit logIn(userName.toStdString(), userPassword.toStdString());
+		emit logIn(userName, userPassword);
 		break;
 	case MESSAGETYPE_SIGNIN:
 		input >> userName >> userPassword;
-		emit signIn(userName.toStdString(), userPassword.toStdString());
+		emit signIn(userName, userPassword);
 		break;
 	case MESSAGETYPE_LOGOUT:
 		emit logOut();

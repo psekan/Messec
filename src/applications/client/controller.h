@@ -5,6 +5,7 @@
 #ifndef MESSEC_CONTROLLER_H
 #define MESSEC_CONTROLLER_H
 
+#include <QtGlobal>
 #include <iostream>
 #include <QThread>
 #include <clientManager.h>
