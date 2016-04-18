@@ -5,6 +5,7 @@
 #ifndef MESSEC_CLIENT_H
 #define MESSEC_CLIENT_H
 
+#include <qglobal.h>
 #include <QObject>
 #include <QThread>
 #include <QTcpSocket>

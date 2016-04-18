@@ -5,7 +5,7 @@
 #ifndef MESSEC_CLIENTMANAGER_H
 #define MESSEC_CLIENTMANAGER_H
 
-#include <QtGlobal>
+#include <qglobal.h>
 #include <QTcpSocket>
 #include <string>
 #include <vector>

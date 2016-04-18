@@ -5,7 +5,7 @@
 #ifndef MESSEC_SERVERMANAGER_H
 #define MESSEC_SERVERMANAGER_H
 
-#include <QtGlobal>
+#include <qglobal.h>
 #include <QObject>
 #include <QTcpServer>
 #include <string>

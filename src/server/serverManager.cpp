@@ -220,7 +220,7 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 }
 
 Client* ServerManager::clientConnect(qintptr socket) {
-	Client* newClient = new Client(socket, parent());
+	Client* newClient = new Client(socket, this);
 	newClient->start();
 	m_clients.push_back(newClient);
 	return newClient;
