@@ -64,13 +64,13 @@ void ClientManager::disconnect() {
 	m_serverSocket = nullptr;
 }
 
-bool ClientManager::signIn(std::string userName, std::string password) {
+void ClientManager::signIn(QString userName, QString password) {
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_SIGNIN;
 	str << messageType;
-	str << QString::fromStdString(userName);
-	str << QString::fromStdString(password);
+	str << QString::fromStdString(userName.toStdString());
+	str << QString::fromStdString(password.toStdString());
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
 	m_serverSocket->waitForReadyRead();
@@ -80,16 +80,16 @@ bool ClientManager::signIn(std::string userName, std::string password) {
 	u >> messageType;
 	u >> message;
 
-	return (messageType == MESSAGETYPE_SIGNIN_SUCCESS);
+	emit signInResult(messageType == MESSAGETYPE_SIGNIN_SUCCESS);
 }
 
-bool ClientManager::logIn(std::string userName, std::string password) {
+void ClientManager::logIn(QString userName, QString password) {
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_LOGIN;
 	str << messageType;
-	str << QString::fromStdString(userName);
-	str << QString::fromStdString(password);
+	str << QString::fromStdString(userName.toStdString());
+	str << QString::fromStdString(password.toStdString());
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
 	m_serverSocket->waitForReadyRead();
@@ -99,7 +99,7 @@ bool ClientManager::logIn(std::string userName, std::string password) {
 	u >> messageType;
 	u >> message;
 
-	return (messageType == MESSAGETYPE_LOGIN_SUCCESS);
+	emit logInResult(messageType == MESSAGETYPE_LOGIN_SUCCESS);
 }
 
 bool ClientManager::isLoggedIn() const {
@@ -115,7 +115,7 @@ void ClientManager::logOut() {
 	m_serverSocket->waitForBytesWritten();
 }
 
-std::vector<std::string> ClientManager::getOnlineUsers() const {
+void ClientManager::getOnlineUsers() {
 	//return m_onlineUsers;
 
 	QByteArray arr;
@@ -131,20 +131,14 @@ std::vector<std::string> ClientManager::getOnlineUsers() const {
 	u >> messageType;
 	u >> message;
 
-	std::vector<std::string> users;
 	if (messageType == MESSAGETYPE_GET_ONLINE_USERS)
 	{
 		std::cerr << "Error while getting all online users" << std::endl;
-		return users;
+		emit getOnlineUsersResult(QStringList());
 	}
 
-	size_t pos = 0;
-	QStringList list = message.split("|#|");
-	for (QString user : list)
-	{
-		users.push_back(user.toStdString());
-	}
-	return users;
+	QStringList users = message.split("|#|");
+	emit getOnlineUsersResult(users);
 }
 
 std::vector<Messenger*> ClientManager::getMessengers() const {
