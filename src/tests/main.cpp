@@ -6,19 +6,14 @@
 #include <vector>
 #include "../client/messenger.h"
 
-/////////// profiling 10MB ////////////////
-#include <iostream>
-#include <fstream>
-/////////////////
-
 TEST_CASE("Database tests") {
 	SECTION("Constructor database") {
-		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/db_nok.db"), DatabaseAccessForbidden);
-		CHECK_NOTHROW(Database okDb("db_ok.db"));
+		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/database00.db"), DatabaseAccessForbidden);
+		CHECK_NOTHROW(Database okDb("database8.db"));
 	}
 
 	SECTION("Database write/read") {
-		Database myDB("myDB_rw.db");
+		Database myDB("database9.db");
 		myDB.insertUser(UserDatabaseRow("testname", "testpassword", "testsalt"));
 		myDB.insertUser(UserDatabaseRow("testname2", "testpassword2", "testsalt2"));
 		UserDatabaseRow row = myDB.getUser("testname2");
@@ -29,11 +24,11 @@ TEST_CASE("Database tests") {
 	}
 
 	SECTION("Load database") {
-		Database myDB("myDB_load.db");
+		Database myDB("database10.db");
 		myDB.insertUser(UserDatabaseRow("testname", "testpassword", "testsalt"));
 		myDB.insertUser(UserDatabaseRow("testname2", "testpassword2", "testsalt2"));
 		myDB.~Database();
-		Database myDB_open("myDB_load.db");
+		Database myDB_open("database10.db");
 		UserDatabaseRow row_open = myDB_open.getUser("testname");
 		CHECK(row_open.exists() == true);
 		CHECK(row_open.getName().compare("testname") == 0);
@@ -42,7 +37,7 @@ TEST_CASE("Database tests") {
 	}
 
 	SECTION("clear database") {
-		Database myDB("myDB_clear.db");
+		Database myDB("database11.db");
 		myDB.insertUser(UserDatabaseRow("testname", "testpassword", "testsalt"));
 		myDB.insertUser(UserDatabaseRow("testname2", "testpassword2", "testsalt2"));
 		UserDatabaseRow row = myDB.getUser("testname");
@@ -69,7 +64,7 @@ TEST_CASE("Database tests") {
 	}
 
 	SECTION("database delete user") {
-		Database myDB("myDB_deleteUser.db");
+		Database myDB("database12.db");
 		myDB.insertUser(UserDatabaseRow("testname", "testpassword", "testsalt"));
 		myDB.insertUser(UserDatabaseRow("testname2", "testpassword2", "testsalt2"));
 		UserDatabaseRow row = myDB.getUser("testname2");
@@ -91,12 +86,12 @@ TEST_CASE("Server tests") {
 	std::string pw[5] = { "password0", "password1", "password2", "password3", "password4" };
 
 	SECTION("Constructor database") {
-		CHECK_THROWS_AS(ServerManager nokserver("./a/b/c/d/db_nok2.db"), DatabaseAccessForbidden);
-		CHECK_NOTHROW(ServerManager nokserver("db_ok2.db"));
+		CHECK_THROWS_AS(ServerManager nokserver("./a/b/c/d/database0.db",(qint16)8081, 2048, 0), DatabaseAccessForbidden);
+		CHECK_NOTHROW(ServerManager nokserver("database1.db", (qint16)8081, 2048, 0));
 	}
 
 	SECTION("User registration") {
-		ServerManager myServer("test_database1.db");
+		ServerManager myServer("database2.db", (qint16)8081, 2048, 0);
 		CHECK(myServer.userRegistration("John", "a") == false);
 		CHECK(myServer.userRegistration("Jack", "length7") == false);
 
@@ -118,7 +113,7 @@ TEST_CASE("Server tests") {
 	}
 
 	SECTION("User authentication") {
-		ServerManager myServer("test_database2.db");
+		ServerManager myServer("database3.db", (qint16)8081, 2048, 0);
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
@@ -130,8 +125,8 @@ TEST_CASE("Server tests") {
 		myServer.clearDatabase();
 	}
 
-	SECTION("List of online users") {
-		ServerManager myServer("test_database3.db");
+	/*SECTION("List of online users") {
+		ServerManager myServer("database4.db", (qint16)8081, 2048, 0);
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
@@ -165,7 +160,7 @@ TEST_CASE("Server tests") {
 	}
 
 	SECTION("Kick user") {
-		ServerManager myServer("test_database4.db");
+		ServerManager myServer("database5.db", (qint16)8081, 2048, 0);
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
@@ -191,9 +186,9 @@ TEST_CASE("Server tests") {
 		myServer.clientDisconnect(c3);
 		myServer.clearDatabase();
 	}
-
+	*/
 	SECTION("delete user") {
-		ServerManager myServer("test_database5.db");
+		ServerManager myServer("database6.db", (qint16)8081, 2048, 0);
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
@@ -405,8 +400,8 @@ TEST_CASE("Send/Receive message") {
 }
 
 TEST_CASE("Database") {
-	CHECK_NOTHROW(Database database("test_database.db"));
-	Database database("test_database.db");
+	CHECK_NOTHROW(Database database("database7.db"));
+	Database database("database7.db");
 	database.clearDatabase();
 	CHECK(database.insertUser(UserDatabaseRow("Name", "Pass", "Salt")));
 	CHECK(database.insertUser(UserDatabaseRow("Name1", "Pass1", "Salt1")));
@@ -462,85 +457,3 @@ TEST_CASE("IPv4") {
 		}
 	}
 }
-
-/*TEST_CASE("Performance") {
-	ServerManager myServer("test_database1.db");
-	//myServer.clearDatabase();
-	std::string tousNames[1000];
-	std::string tousPswrd[1000];
-	std::vector<Client*> clients;
-	Client *client;
-	for (int i = 0; i < 1000; ++i) {
-		tousNames[i] = "name" + std::to_string(i);
-		tousPswrd[i] = "password" + std::to_string(i);
-	}
-
-	//for (int i = 0; i < 1000; ++i) {
-	//	myServer.userRegistration(tousNames[i], tousPswrd[i]);
-	//}
-
-	for (int i = 0; i < 1000; ++i) {
-		client = myServer.clientConnect(i);
-		clients.push_back(client);
-		myServer.clientLogIn(client, tousNames[i], tousPswrd[i]);
-		//std::cout << tousNames[i] << " " << tousPswrd[i] << std::endl;
-	}
-
-	for (int i = 0; i < 999; ++i) {
-		int var = rand() % (999 - i) + 1;
-		client = clients[var];
-		myServer.clientLogOut(client);
-		clients.erase(clients.begin() + var);
-		//std::cout << var << std::endl;
-	}
-	myServer.clientLogOut(clients[0]);
-}*/
-
-/*TEST_CASE("Send/Receive message2") {
-	SECTION("send and receive2") {
-		unsigned char key[32] = { 0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
-			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08,
-			0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
-			0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08 };
-		unsigned char iv[32] = { 0x52, 0x2d, 0xc1, 0xf0, 0x99, 0x56, 0x7d, 0x07,
-			0xf4, 0x7f, 0x37, 0xa3, 0x2a, 0x84, 0x42, 0x7d,
-			0x64, 0x3a, 0x8c, 0xdc, 0xbf, 0xe5, 0xc0, 0xc9,
-			0x75, 0x98, 0xa2, 0xbd, 0x25, 0x55, 0xd1, 0xaa };
-
-		uint32_t counterA = 0x1368f2;
-		uint32_t counterB = 0xfa5372;
-		Messenger first("first", 6888, key, iv, counterA, counterB);
-		Messenger second("second", 6777, key, iv, counterB, counterA);
-
-		FILE *input, *test;
-
-		for (int i = 0; i < 20; ++i) {
-			input = fopen("test.txt", "rb");
-			unsigned char messageType = 21;
-			fseek(input, 0, SEEK_END);
-			size_t filesize = ftell(input);
-			rewind(input);
-			unsigned char* messageForSend = new unsigned char[filesize];
-
-			fread(messageForSend, sizeof(char), filesize, input);
-
-			messageForSend[i % filesize] = 'l';
-			messageForSend[i % 45] = 'p';
-			messageForSend[i % 85] = 'k';
-
-			unsigned char* bytesToSend = new unsigned char[filesize + Messenger::MESSAGE_INFO_SIZE];
-			CHECK(first.prepareMessageToSend(messageType, filesize, (const unsigned char*)messageForSend, bytesToSend));
-			CHECK(memcmp(messageForSend, bytesToSend, filesize) != 0);
-
-			unsigned char* receivedMessage = new unsigned char[filesize];
-			unsigned char receivedMessageType = 0;
-			second.parseReceivedMessage(bytesToSend, filesize + Messenger::MESSAGE_INFO_SIZE, receivedMessageType, receivedMessage);
-			CHECK(memcmp(receivedMessage, messageForSend, filesize) == 0);
-
-			delete[] bytesToSend;
-			delete[] receivedMessage;
-			delete[] messageForSend;
-			fclose(input);
-		}
-	}
-}*/

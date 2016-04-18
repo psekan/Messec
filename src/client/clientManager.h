@@ -89,6 +89,7 @@ public:
      */
     bool startCommunicationWith(std::string userName);
 signals:
+
 	void connectionLost();
 
 	void signalconnected(bool isConnected);

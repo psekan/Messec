@@ -9,19 +9,24 @@
 #include <iostream>
 #include <QThread>
 #include <clientManager.h>
+#define  COMMAND_COUNT 7
 
 using namespace std;
 
 class Controler : public QThread
 {
 	Q_OBJECT
-	ClientManager *client;
+		ClientManager *client;
+	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGIN, LOGIN, LOGOUT, USERS };
+	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users" };
+
 public:
 
 	Controler(QObject *parent = 0) : QThread(parent)
 	{
 		client = new ClientManager(this);
 		QObject::connect(client, SIGNAL(finished()), this, SLOT(quit()));
+
 		connect(client, SIGNAL(signalconnected(bool)), this, SLOT(signalconnected(bool)));
 		connect(this, SIGNAL(signalconnect(QString, int)), client, SLOT(signalconnect(QString, int)));
 
@@ -44,13 +49,24 @@ public:
 	}
 
 	void run() override {
-		string command;
-		while (1) {
-			cin >> command;
-			if (command == "quit") {
+		string inCommand;
+		int commandIndex;
+		bool runOk = true;
+		while (runOk) {
+			cin >> inCommand;
+			commandIndex = -1;
+			for (int i = 0; i < COMMAND_COUNT; ++i) {
+				if (!inCommand.compare(commands[i])) {
+					commandIndex = i;
+					break;
+				}
+			}
+			switch (commandIndex) {
+			case QUIT: {
+				runOk = false;
 				break;
 			}
-			else if (command == "connect") {
+			case CONNECT: {
 				string ipaddr;
 				int port = 0;
 
@@ -59,34 +75,42 @@ public:
 				cout << "Write host port: ";
 				cin >> port;
 				emit signalconnect(QString(ipaddr.c_str()), port);
+				break;
 			}
-			else if (command == "disconnect") {
+			case DISCONNECT: {
 				client->disconnect();
+				break;
 			}
-			else if (command == "signin") {
+			case SIGIN: {
 				string name, password;
 				cout << "User name: ";
 				cin >> name;
 				cout << "User password: ";
 				cin >> password;
 				emit signIn(QString(name.c_str()), QString(password.c_str()));
+				break;
 			}
-			else if (command == "login") {
+			case LOGIN: {
 				string name, password;
 				cout << "User name: ";
 				cin >> name;
 				cout << "User password: ";
 				cin >> password;
 				emit logIn(QString(name.c_str()), QString(password.c_str()));
+				break;
 			}
-			else if (command == "logout") {
+			case LOGOUT: {
 				emit logOut();
+				break;
 			}
-			else if (command == "users") {
+			case USERS: {
 				emit getOnlineUsers();
+				break;
 			}
-			else {
-				cout << "Unknown command " << command << endl;
+			default: {
+				cout << "Unknown command " << inCommand << endl;
+				break;
+			}
 			}
 		}
 		exit(0);
@@ -94,7 +118,6 @@ public:
 
 signals:
 	void signalconnect(QString addr, int port);
-
 
 	/**
 	* Log out user.
@@ -126,7 +149,7 @@ signals:
 	*/
 	void logIn(QString userName, QString password);
 
-public slots:
+	public slots:
 	void signalconnected(bool isConnected)
 	{
 		if (isConnected)
@@ -137,11 +160,11 @@ public slots:
 		{
 			cout << "Connect fail" << endl;
 		}
-	}	
+	}
 
 	void signInResult(bool result)
 	{
-		if (result) 
+		if (result)
 		{
 			cout << "Successfully sign in" << endl;
 		}
@@ -153,7 +176,7 @@ public slots:
 
 	void logInResult(bool result)
 	{
-		if (result) 
+		if (result)
 		{
 			cout << "Successfully log in" << endl;
 		}
@@ -171,6 +194,8 @@ public slots:
 			cout << user.toStdString() << endl;
 		}
 	}
+
+
 };
 
 

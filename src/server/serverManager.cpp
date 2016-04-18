@@ -79,26 +79,12 @@ void stringToUCHar(std::string &input, unsigned char* output)
 	}
 }
 
-void ServerManager::processClientCommunication(Client* client) {
-	//TODO
-}
-
-void ServerManager::processNewConnectionRequests() {
-	//TODO
-}
-
-void ServerManager::sendNewRequestToClient(Client* from, Client* to, unsigned char hash[16]) {
-	//TODO
-}
-
-void ServerManager::createCommunicationBetween(Client* communicationServer, Client* communicationClient) {
-	//TODO
-}
-
+/*Constructor*/
 ServerManager::ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent) : QTcpServer(parent), port(port), m_database(dbFilePath) {
 	//TODO init rsa
 }
 
+/*Network*/
 void ServerManager::start()
 {
 	qDebug() << "Server start on " << port;
@@ -115,12 +101,13 @@ void ServerManager::incomingConnection(qintptr handle)
 	Client* client = clientConnect(handle);
 	connect(client, SIGNAL(disconnect()), this, SLOT(clientDisconnect()));
 	connect(client, SIGNAL(finished()), this, SLOT(clientDisconnect()));
-	connect(client, SIGNAL(logIn(QString,QString)), this, SLOT(clientLogIn(QString,QString)));
-	connect(client, SIGNAL(signIn(QString,QString)), this, SLOT(clientSignIn(QString,QString)));
+	connect(client, SIGNAL(logIn(QString, QString)), this, SLOT(clientLogIn(QString, QString)));
+	connect(client, SIGNAL(signIn(QString, QString)), this, SLOT(clientSignIn(QString, QString)));
 	connect(client, SIGNAL(logOut()), this, SLOT(clientLogOut()));
 	connect(client, SIGNAL(getOnlineUsers()), this, SLOT(getOnlineUsers()));
 }
 
+/*Database + client*/
 void ServerManager::clearDatabase() {
 	m_database.clearDatabase();
 }
@@ -129,20 +116,6 @@ void ServerManager::removeUserFromDb(std::string userName) {
 	if (!m_database.removeUser(userName))
 	{
 		std::cerr << "Client remove from database failed\n";
-	}
-}
-
-void ServerManager::kickUser(std::string userName) {
-	std::string message = "You were kicked by server\n";
-
-	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
-	{
-		if (userName.compare((*it)->m_userName) == 0)
-		{
-			Client *client = *it;
-			client->disconnect();
-			return;
-		}
 	}
 }
 
@@ -219,6 +192,21 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 	return false;
 }
 
+/*Client operations*/
+void ServerManager::kickUser(std::string userName) {
+	std::string message = "You were kicked by server\n";
+
+	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
+	{
+		if (userName.compare((*it)->m_userName) == 0)
+		{
+			Client *client = *it;
+			client->disconnect();
+			return;
+		}
+	}
+}
+
 Client* ServerManager::clientConnect(qintptr socket) {
 	Client* newClient = new Client(socket, this);
 	newClient->start();
@@ -240,13 +228,13 @@ void ServerManager::clientDisconnect() {
 }
 
 void ServerManager::clientLogIn(QString userName, QString password) {
+	std::cout << userName.toStdString() << " " << password.toStdString() << endl << endl; //////////debug print
 	Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
 		return;
 	}
-
 	if (userAuthentication(userName.toStdString(), password.toStdString()))
 	{
 		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, "");
@@ -254,7 +242,7 @@ void ServerManager::clientLogIn(QString userName, QString password) {
 	}
 	else
 	{
-		client->sendMessage(MESSAGETYPE_LOGIN_FAIL, "");		
+		client->sendMessage(MESSAGETYPE_LOGIN_FAIL, "");
 	}
 }
 
@@ -308,3 +296,21 @@ void ServerManager::getOnlineUsers() {
 	}
 	client->sendMessage(MESSAGETYPE_GET_ONLINE_USERS, message);
 }
+
+/*TODO*/
+void ServerManager::processClientCommunication(Client* client) {
+	//TODO
+}
+
+void ServerManager::processNewConnectionRequests() {
+	//TODO
+}
+
+void ServerManager::sendNewRequestToClient(Client* from, Client* to, unsigned char hash[16]) {
+	//TODO
+}
+
+void ServerManager::createCommunicationBetween(Client* communicationServer, Client* communicationClient) {
+	//TODO
+}
+

@@ -50,20 +50,21 @@ class ServerManager : public QTcpServer
      * @param Client&
      */
     void createCommunicationBetween(Client* communicationServer, Client* communicationClient);
+
 public:
+	/**
+	* Create new server manager on sqlite database.
+	* @exception DatabaseAccessForbidden if cannot read or create database file
+	* @param std::string path to sqlite database
+	* @param qint16 port on tcp protocol
+	* @param quint16 length of rsa key in bits
+	*/
+	explicit ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent = 0);
+
 	/**
 	* @brief start Method starts infinite loop
 	*/
-	void start();
-
-    /**
-     * Create new server manager on sqlite database.
-     * @exception DatabaseAccessForbidden if cannot read or create database file
-     * @param std::string path to sqlite database
-     * @param qint16 port on tcp protocol
-     * @param quint16 length of rsa key in bits
-     */
-    explicit ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent = 0);
+	void start();   
 
     /**
      * Clear whole database, all users.
@@ -77,27 +78,27 @@ public:
 	 */
     void removeUserFromDb(std::string userName);
 
+	/**
+	* Add new user to database.
+	* @param std::string user name
+	* @param std::string password
+	* @return bool false if registration fails (user already exists, bad format of password, ...)
+	*/
+	bool userRegistration(std::string userName, std::string password);
+
+	/**
+	* Authentication of user
+	* @param std::string user name
+	* @param std::string password
+	* @return bool false if authentication fails (user not exists, bad password, ...)
+	*/
+	bool userAuthentication(std::string userName, std::string password);
+
     /**
      * Close connection with user.
      * @param std::string name of user.
      */
-    void kickUser(std::string userName);
-
-	/**
-	 * Add new user to database.
-	 * @param std::string user name
-	 * @param std::string password
-	 * @return bool false if registration fails (user already exists, bad format of password, ...)
-	 */
-	bool userRegistration(std::string userName, std::string password);
-
-	/**
-	 * Authentication of user
-	 * @param std::string user name
-	 * @param std::string password
-	 * @return bool false if authentication fails (user not exists, bad password, ...)
-	 */
-	bool userAuthentication(std::string userName, std::string password);
+    void kickUser(std::string userName);	
 
 	/**
 	 * New client is connected
