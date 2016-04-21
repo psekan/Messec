@@ -7,6 +7,8 @@
 #include <QtGlobal>
 #include <QDataStream>
 #include <QHostAddress>
+#include <iostream>
+#include <serverManager.h>
 
 Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false) {
 	
@@ -58,8 +60,10 @@ void Client::logOutUser() {
 
 void Client::readData()
 {
-	qDebug() << "Reading data";
+	std::cout << "Reading data" << std::endl;
 	QDataStream input(socket);
+
+	ServerManager *server = reinterpret_cast<ServerManager*>(parent());
 
 	quint8 messageType;
 	//TODO decrypt
@@ -68,21 +72,28 @@ void Client::readData()
 	QString userName, userPassword;
 	switch (messageType) {
 	case MESSAGETYPE_LOGIN:
+		std::cout << "login initialized" << std::endl;
 		input >> userName >> userPassword;
-		emit logIn(userName, userPassword);
+		server->clientLogIn(userName, userPassword, this);
+		//emit logIn(userName, userPassword);
 		break;
 	case MESSAGETYPE_SIGNIN:
+		std::cout << "singin initialized" << std::endl;
 		input >> userName >> userPassword;
-		emit signIn(userName, userPassword);
+		std::cout << "data have been read" << std::endl;
+		server->clientSignIn(userName, userPassword, this);
+		//emit signIn(userName, userPassword);
 		break;
 	case MESSAGETYPE_LOGOUT:
-		emit logOut();
+		std::cout << "logout initialized" << std::endl;
+		//emit logOut();
 		break;
 	case MESSAGETYPE_GET_ONLINE_USERS:
-		emit getOnlineUsers();
+		std::cout << "listing of users initialized" << std::endl;
+		//emit getOnlineUsers();
 		break;
 	default:
-		qDebug() << "Wrong message type";
+		std::cout << "Wrong message type" << std::endl;
 	}
 }
 

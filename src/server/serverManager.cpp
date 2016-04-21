@@ -227,9 +227,11 @@ void ServerManager::clientDisconnect() {
 	delete client;
 }
 
-void ServerManager::clientLogIn(QString userName, QString password) {
-	std::cout << userName.toStdString() << " " << password.toStdString() << endl << endl; //////////debug print
-	Client* client = dynamic_cast<Client*>(sender());
+void ServerManager::clientLogIn(QString userName, QString password, Client* client) {
+	
+	std::cout << userName.toStdString() << " is trying to login with password: " << password.toStdString() << std::endl; //////////debug print
+	
+	//Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
@@ -237,17 +239,26 @@ void ServerManager::clientLogIn(QString userName, QString password) {
 	}
 	if (userAuthentication(userName.toStdString(), password.toStdString()))
 	{
-		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, "");
+		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, "OK");
 		client->logInUser(userName.toStdString());
+		std::cout << "login OK" << std::endl;
 	}
 	else
 	{
-		client->sendMessage(MESSAGETYPE_LOGIN_FAIL, "");
+		client->sendMessage(MESSAGETYPE_LOGIN_FAIL, "NOK");
+		std::cout << "login FAIL" << std::endl;
 	}
 }
 
-void ServerManager::clientSignIn(QString userName, QString password) {
-	Client* client = dynamic_cast<Client*>(sender());
+void ServerManager::clientSignIn(QString userName, QString password, Client* client) {
+	std::cout << userName.toStdString() << " is trying to signin with password: " << password.toStdString() << std::endl;
+	//Client* client = dynamic_cast<Client*>(sender());
+	
+	/*if (client != NULL) {
+		client->moveToThread(this->thread());
+		client->deleteLater();
+	}*/
+
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
@@ -256,12 +267,16 @@ void ServerManager::clientSignIn(QString userName, QString password) {
 
 	if (userRegistration(userName.toStdString(), password.toStdString()))
 	{
-		client->sendMessage(MESSAGETYPE_SIGNIN_SUCCESS, "");
+		std::cout << "a" << std::endl;
+		client->sendMessage(MESSAGETYPE_SIGNIN_SUCCESS, "OK");
+		std::cout << "b" << std::endl;
 		client->logInUser(userName.toStdString());
+		std::cout << "signin OK" << std::endl;
 	}
 	else
 	{
-		client->sendMessage(MESSAGETYPE_SIGNIN_FAIL, "");
+		client->sendMessage(MESSAGETYPE_SIGNIN_FAIL, "NOK");
+		std::cout << "signin FAIL" << std::endl;
 	}
 }
 

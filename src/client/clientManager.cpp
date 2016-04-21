@@ -71,14 +71,31 @@ void ClientManager::signIn(QString userName, QString password) {
 	str << messageType;
 	str << QString::fromStdString(userName.toStdString());
 	str << QString::fromStdString(password.toStdString());
+	std::cout << "seidng data to server" << std::endl;
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
+	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
 	QDataStream u(m_serverSocket);
 	QString message;
 	u >> messageType;
 	u >> message;
+	
+	std::cout << "response is: " << std::endl;
+	
+	if(messageType == MESSAGETYPE_SIGNIN_SUCCESS)
+	{
+		std::cout << "succes" << std::endl;
+	}
+	else if(messageType == MESSAGETYPE_SIGNIN_FAIL)
+	{
+		std::cout << "failure" << std::endl;
+	}
+	else
+	{
+		std::cout << "WTF?!!!: toto prislo " << messageType << " " << message.toStdString() << std::endl;
+	}
 
 	emit signInResult(messageType == MESSAGETYPE_SIGNIN_SUCCESS);
 }
@@ -90,14 +107,31 @@ void ClientManager::logIn(QString userName, QString password) {
 	str << messageType;
 	str << QString::fromStdString(userName.toStdString());
 	str << QString::fromStdString(password.toStdString());
+	std::cout << "seidng data to server" << std::endl;
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
+	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
 	QDataStream u(m_serverSocket);
 	QString message;
 	u >> messageType;
 	u >> message;
+	
+	std::cout << "response is: " << std::endl;
+	
+	if (messageType == MESSAGETYPE_LOGIN_SUCCESS)
+	{
+		std::cout << "succes" << std::endl;
+	}
+	else if(messageType == MESSAGETYPE_LOGIN_FAIL)
+	{
+		std::cout << "failure" << std::endl;
+	}
+	else
+	{
+		std::cout << "WTF?!!!: toto prislo " << messageType << " " << message.toStdString() << std::endl;
+	}
 
 	emit logInResult(messageType == MESSAGETYPE_LOGIN_SUCCESS);
 }

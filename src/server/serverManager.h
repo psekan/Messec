@@ -134,7 +134,7 @@ public slots:
 	 * @param std::string user password
 	 * @return bool false if cannot log in user
 	 */
-	void clientLogIn(QString userName, QString password);
+	void clientLogIn(QString userName, QString password, Client* client);
 
 	/**
 	* Sign in client as user
@@ -143,7 +143,7 @@ public slots:
 	* @param std::string user password
 	* @return bool false if cannot log in user
 	*/
-	void clientSignIn(QString userName, QString password);
+	void clientSignIn(QString userName, QString password, Client* client);
 
 	/**
 	 * Log out client as some user
