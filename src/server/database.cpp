@@ -27,6 +27,7 @@ Database::~Database() {
 }
 
 UserDatabaseRow Database::getUser(std::string userName) {
+	QMutexLocker locker(&mutex);
 	const char* sql = "SELECT NAME, PASSWORD, SALT FROM USER WHERE NAME = ?;";
 	sqlite3_stmt * stmt;
 	sqlite3_prepare(db, sql, (int)(strlen(sql) + 1), &stmt, nullptr);
@@ -47,6 +48,7 @@ UserDatabaseRow Database::getUser(std::string userName) {
 }
 
 bool Database::insertUser(UserDatabaseRow user) {
+	QMutexLocker locker(&mutex);
 	const char* sql = "INSERT INTO USER (NAME, PASSWORD, SALT) VALUES (?,?,?);";
 	sqlite3_stmt * stmt;
 	sqlite3_prepare(db, sql, strlen(sql), &stmt, 0);
@@ -63,6 +65,7 @@ bool Database::insertUser(UserDatabaseRow user) {
 }
 
 bool Database::removeUser(std::string userName) {
+	QMutexLocker locker(&mutex);
 	if (!this->getUser(userName).exists()) {
 		return false;
 	}

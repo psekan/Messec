@@ -7,6 +7,7 @@
 
 #include <string>
 #include "sqlite3.h"
+#include  <qmutex.h>
 
 class WrongDatabasePassword : public std::exception {};
 
@@ -18,6 +19,7 @@ class UserDatabaseRow
 	std::string name;
 	std::string password;
 	std::string salt;
+	
 public:
 	UserDatabaseRow() : m_exists(false), name(""), password(""), salt("") {};
  	UserDatabaseRow(std::string name, std::string password, std::string salt) : m_exists(true), name(name), password(password), salt(salt) {};
@@ -62,7 +64,8 @@ class Database
 {
 	char* lastError;
 	sqlite3 *db;
-
+	mutable QMutex mutex;
+	
 	void freeLastError();
 public:
 

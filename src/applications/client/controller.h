@@ -91,6 +91,11 @@ public:
 				break;
 			}
 			case LOGIN: {
+				/*if (client->isLoggedIn())         // pre testovanie zakomentovane
+				{
+					std::cout << "you are already logged in" << std::endl;
+					break;
+				}*/
 				string name, password;
 				cout << "User name: ";
 				cin >> name;
@@ -100,10 +105,20 @@ public:
 				break;
 			}
 			case LOGOUT: {
+				/*if (!client->isLoggedIn())    // pre testovanie zakomentovane
+				{
+					std::cout << "you are not logged in" << std::endl;
+					break;
+				}*/
 				emit logOut();
 				break;
 			}
 			case USERS: {
+				/*if(!client->isLoggedIn())    // pre testovanie zakomentovane
+				{
+					std::cout << "you are not logged in" << std::endl;
+					break;
+				}*/
 				emit getOnlineUsers();
 				break;
 			}

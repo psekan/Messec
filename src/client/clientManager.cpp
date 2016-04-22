@@ -133,6 +133,7 @@ void ClientManager::logIn(QString userName, QString password) {
 		std::cout << "WTF?!!!: toto prislo " << messageType << " " << message.toStdString() << std::endl;
 	}
 
+	m_isLoggedIn = true;
 	emit logInResult(messageType == MESSAGETYPE_LOGIN_SUCCESS);
 }
 
@@ -147,6 +148,7 @@ void ClientManager::logOut() {
 	str << messageType;
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
+	m_isLoggedIn = false;
 }
 
 void ClientManager::getOnlineUsers() {
@@ -165,7 +167,7 @@ void ClientManager::getOnlineUsers() {
 	u >> messageType;
 	u >> message;
 
-	if (messageType == MESSAGETYPE_GET_ONLINE_USERS)
+	if (!messageType == MESSAGETYPE_GET_ONLINE_USERS)
 	{
 		std::cerr << "Error while getting all online users" << std::endl;
 		emit getOnlineUsersResult(QStringList());

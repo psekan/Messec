@@ -75,22 +75,20 @@ void Client::readData()
 		std::cout << "login initialized" << std::endl;
 		input >> userName >> userPassword;
 		server->clientLogIn(userName, userPassword, this);
-		//emit logIn(userName, userPassword);
 		break;
 	case MESSAGETYPE_SIGNIN:
 		std::cout << "singin initialized" << std::endl;
 		input >> userName >> userPassword;
 		std::cout << "data have been read" << std::endl;
 		server->clientSignIn(userName, userPassword, this);
-		//emit signIn(userName, userPassword);
 		break;
 	case MESSAGETYPE_LOGOUT:
 		std::cout << "logout initialized" << std::endl;
-		//emit logOut();
+		server->clientLogOut(this);
 		break;
 	case MESSAGETYPE_GET_ONLINE_USERS:
 		std::cout << "listing of users initialized" << std::endl;
-		//emit getOnlineUsers();
+		server->getOnlineUsers(this);
 		break;
 	default:
 		std::cout << "Wrong message type" << std::endl;

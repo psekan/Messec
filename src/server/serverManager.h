@@ -23,6 +23,7 @@ class ServerManager : public QTcpServer
     mbedtls_rsa_context m_rsaKey;
     std::vector<Client*> m_clients;
 	Database m_database;
+	mutable QMutex mutex;
 
     /**
      * Process client incoming requests.
@@ -148,9 +149,9 @@ public slots:
 	/**
 	 * Log out client as some user
 	 */
-	void clientLogOut();
+	void clientLogOut(Client* client);
 
-	void getOnlineUsers();
+	void getOnlineUsers(Client* client);
 };
 
 #endif //MESSEC_SERVERMANAGER_H

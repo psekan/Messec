@@ -101,10 +101,6 @@ void ServerManager::incomingConnection(qintptr handle)
 	Client* client = clientConnect(handle);
 	connect(client, SIGNAL(disconnect()), this, SLOT(clientDisconnect()));
 	connect(client, SIGNAL(finished()), this, SLOT(clientDisconnect()));
-	connect(client, SIGNAL(logIn(QString, QString)), this, SLOT(clientLogIn(QString, QString)));
-	connect(client, SIGNAL(signIn(QString, QString)), this, SLOT(clientSignIn(QString, QString)));
-	connect(client, SIGNAL(logOut()), this, SLOT(clientLogOut()));
-	connect(client, SIGNAL(getOnlineUsers()), this, SLOT(getOnlineUsers()));
 }
 
 /*Database + client*/
@@ -196,6 +192,7 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 void ServerManager::kickUser(std::string userName) {
 	std::string message = "You were kicked by server\n";
 
+	QMutexLocker locker(&mutex);
 	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
 	{
 		if (userName.compare((*it)->m_userName) == 0)
@@ -210,6 +207,7 @@ void ServerManager::kickUser(std::string userName) {
 Client* ServerManager::clientConnect(qintptr socket) {
 	Client* newClient = new Client(socket, this);
 	newClient->start();
+	QMutexLocker locker(&mutex);
 	m_clients.push_back(newClient);
 	return newClient;
 }
@@ -222,6 +220,7 @@ void ServerManager::clientDisconnect() {
 		return;
 	}
 
+	QMutexLocker locker(&mutex);
 	auto it = std::find(m_clients.begin(), m_clients.end(), client);
 	m_clients.erase(it);
 	delete client;
@@ -231,7 +230,6 @@ void ServerManager::clientLogIn(QString userName, QString password, Client* clie
 	
 	std::cout << userName.toStdString() << " is trying to login with password: " << password.toStdString() << std::endl; //////////debug print
 	
-	//Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
@@ -251,13 +249,8 @@ void ServerManager::clientLogIn(QString userName, QString password, Client* clie
 }
 
 void ServerManager::clientSignIn(QString userName, QString password, Client* client) {
-	std::cout << userName.toStdString() << " is trying to signin with password: " << password.toStdString() << std::endl;
-	//Client* client = dynamic_cast<Client*>(sender());
 	
-	/*if (client != NULL) {
-		client->moveToThread(this->thread());
-		client->deleteLater();
-	}*/
+	std::cout << userName.toStdString() << " is trying to signin with password: " << password.toStdString() << std::endl;
 
 	if (client == nullptr)
 	{
@@ -267,9 +260,7 @@ void ServerManager::clientSignIn(QString userName, QString password, Client* cli
 
 	if (userRegistration(userName.toStdString(), password.toStdString()))
 	{
-		std::cout << "a" << std::endl;
 		client->sendMessage(MESSAGETYPE_SIGNIN_SUCCESS, "OK");
-		std::cout << "b" << std::endl;
 		client->logInUser(userName.toStdString());
 		std::cout << "signin OK" << std::endl;
 	}
@@ -280,8 +271,7 @@ void ServerManager::clientSignIn(QString userName, QString password, Client* cli
 	}
 }
 
-void ServerManager::clientLogOut() {
-	Client* client = dynamic_cast<Client*>(sender());
+void ServerManager::clientLogOut(Client* client) {
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
@@ -290,8 +280,14 @@ void ServerManager::clientLogOut() {
 	client->logOutUser();
 }
 
-void ServerManager::getOnlineUsers() {
-	Client* client = dynamic_cast<Client*>(sender());
+void ServerManager::getOnlineUsers(Client* client) {
+
+	/*	if (!client->isLoggedIn())              // toto je zakomentovane pre ucely testovania, testuje sa to ak v klientova pre istotu
+	{
+		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, QString(""));  //  zatial je tam nahodna sprava tak aby to nieco poslalo a nebolo toto spravne
+		return;
+	}*/
+
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null\n";
@@ -299,6 +295,7 @@ void ServerManager::getOnlineUsers() {
 	}
 
 	QString message;
+	QMutexLocker locker(&mutex);          
 	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
 	{
 		if ((*it)->isLoggedIn())
@@ -309,6 +306,8 @@ void ServerManager::getOnlineUsers() {
 			message += QString::fromStdString((*it)->m_userName);
 		}
 	}
+	locker.unlock();
+	std::cout << "list to send: " << message.toStdString() << std::endl;
 	client->sendMessage(MESSAGETYPE_GET_ONLINE_USERS, message);
 }
 
