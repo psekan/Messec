@@ -307,6 +307,8 @@ void ServerManager::getOnlineUsers(Client* client) {
 		}
 	}
 	locker.unlock();
+	if (message.toStdString() == "")
+		message += "--------";
 	std::cout << "list to send: " << message.toStdString() << std::endl;
 	client->sendMessage(MESSAGETYPE_GET_ONLINE_USERS, message);
 }

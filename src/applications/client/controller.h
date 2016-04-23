@@ -40,6 +40,7 @@ public:
 		connect(this, SIGNAL(logIn(QString, QString)), client, SLOT(logIn(QString, QString)));
 
 		connect(this, SIGNAL(logOut()), client, SLOT(logOut()));
+
 		client->start();
 	}
 
@@ -78,7 +79,8 @@ public:
 				break;
 			}
 			case DISCONNECT: {
-				client->disconnect();
+				//client->disconnect();
+				//emit signaldisconnect();
 				break;
 			}
 			case SIGIN: {
@@ -181,7 +183,7 @@ signals:
 	{
 		if (result)
 		{
-			cout << "Successfully sign in" << endl;
+			cout << "Sign in successful" << endl;
 		}
 		else
 		{
@@ -193,7 +195,7 @@ signals:
 	{
 		if (result)
 		{
-			cout << "Successfully log in" << endl;
+			cout << "Log in successful" << endl;
 		}
 		else
 		{
