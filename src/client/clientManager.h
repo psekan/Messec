@@ -65,11 +65,6 @@ public:
      */
     bool isConnected() const;
 
-	/**
-	* Disconnect client from server.
-	*/
-	void disconnect();
-
     /**
      * Check if client is logged in to the server.
      * @return bool true if user is logged in
@@ -108,6 +103,11 @@ public slots:
 	* @return bool true if connection is successfully realized.
 	*/
 	void signalconnect(QString ip, int port);
+
+	/**
+	* Disconnect client from server.
+	*/
+	void disconnect();
 
 	/**
 	* Log out user.

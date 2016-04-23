@@ -16,37 +16,39 @@ using namespace std;
 class Controler : public QThread
 {
 	Q_OBJECT
-		ClientManager *client;
-	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGIN, LOGIN, LOGOUT, USERS };
+		ClientManager *clientMngr;
+	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS };
 	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users" };
 
 public:
 
 	Controler(QObject *parent = 0) : QThread(parent)
 	{
-		client = new ClientManager(this);
-		QObject::connect(client, SIGNAL(finished()), this, SLOT(quit()));
+		clientMngr = new ClientManager(this);
+		QObject::connect(clientMngr, SIGNAL(finished()), this, SLOT(quit()));
 
-		connect(client, SIGNAL(signalconnected(bool)), this, SLOT(signalconnected(bool)));
-		connect(this, SIGNAL(signalconnect(QString, int)), client, SLOT(signalconnect(QString, int)));
+		connect(this, SIGNAL(signalDisconnect()), clientMngr, SLOT(disconnect()));
 
-		connect(client, SIGNAL(getOnlineUsersResult(QStringList)), this, SLOT(getOnlineUsersResult(QStringList)));
-		connect(this, SIGNAL(getOnlineUsers()), client, SLOT(getOnlineUsers()));
+		connect(this, SIGNAL(signalconnect(QString, int)), clientMngr, SLOT(signalconnect(QString, int)));
+		connect(clientMngr, SIGNAL(signalconnected(bool)), this, SLOT(signalconnected(bool)));
 
-		connect(client, SIGNAL(signInResult(bool)), this, SLOT(signInResult(bool)));
-		connect(this, SIGNAL(signIn(QString, QString)), client, SLOT(signIn(QString, QString)));
+		connect(this, SIGNAL(getOnlineUsers()), clientMngr, SLOT(getOnlineUsers()));
+		connect(clientMngr, SIGNAL(getOnlineUsersResult(QStringList)), this, SLOT(getOnlineUsersResult(QStringList)));
 
-		connect(client, SIGNAL(logInResult(bool)), this, SLOT(logInResult(bool)));
-		connect(this, SIGNAL(logIn(QString, QString)), client, SLOT(logIn(QString, QString)));
+		connect(this, SIGNAL(signIn(QString, QString)), clientMngr, SLOT(signIn(QString, QString)));
+		connect(clientMngr, SIGNAL(signInResult(bool)), this, SLOT(signInResult(bool)));
 
-		connect(this, SIGNAL(logOut()), client, SLOT(logOut()));
+		connect(this, SIGNAL(logIn(QString, QString)), clientMngr, SLOT(logIn(QString, QString)));
+		connect(clientMngr, SIGNAL(logInResult(bool)), this, SLOT(logInResult(bool)));
 
-		client->start();
+		connect(this, SIGNAL(logOut()), clientMngr, SLOT(logOut()));
+
+		clientMngr->start();
 	}
 
 	virtual ~Controler()
 	{
-		delete client;
+		delete clientMngr;
 	}
 
 	void run() override {
@@ -68,6 +70,11 @@ public:
 				break;
 			}
 			case CONNECT: {
+				/*if (clientMngr->isConnected())         // pre testovanie zakomentovane
+				{
+				std::cout << "you are already connected" << std::endl;
+				break;
+				}*/
 				string ipaddr;
 				int port = 0;
 
@@ -79,11 +86,20 @@ public:
 				break;
 			}
 			case DISCONNECT: {
-				//client->disconnect();
-				//emit signaldisconnect();
+				/*if (!clientMngr->isConnected())         // pre testovanie zakomentovane
+				{
+				std::cout << "you are not connected - you cant disconnect" << std::endl;
+				break;
+				}*/
+				emit signalDisconnect();
 				break;
 			}
-			case SIGIN: {
+			case SIGNIN: {
+				/*if (!clientMngr->isConnected())         // pre testovanie zakomentovane
+				{
+				std::cout << "you are not connected" << std::endl;
+				break;
+				}*/
 				string name, password;
 				cout << "User name: ";
 				cin >> name;
@@ -93,7 +109,7 @@ public:
 				break;
 			}
 			case LOGIN: {
-				/*if (client->isLoggedIn())         // pre testovanie zakomentovane
+				/*if (clientMngr->isLoggedIn())         // pre testovanie zakomentovane
 				{
 					std::cout << "you are already logged in" << std::endl;
 					break;
@@ -107,7 +123,7 @@ public:
 				break;
 			}
 			case LOGOUT: {
-				/*if (!client->isLoggedIn())    // pre testovanie zakomentovane
+				/*if (!clientMngr->isLoggedIn())    // pre testovanie zakomentovane
 				{
 					std::cout << "you are not logged in" << std::endl;
 					break;
@@ -116,7 +132,7 @@ public:
 				break;
 			}
 			case USERS: {
-				/*if(!client->isLoggedIn())    // pre testovanie zakomentovane
+				/*if(!clientMngr->isLoggedIn())    // pre testovanie zakomentovane
 				{
 					std::cout << "you are not logged in" << std::endl;
 					break;
@@ -130,11 +146,23 @@ public:
 			}
 			}
 		}
+		clientMngr->exit(0);
 		exit(0);
 	}
 
 signals:
+	/**
+	* connects client with server
+	* @param Qstring addr ip of server to connect
+	* @param int port number of port to connect
+	*/
 	void signalconnect(QString addr, int port);
+	
+	/**
+	* disconnects client from server
+	* clientManager is still running
+	*/
+	void signalDisconnect();
 
 	/**
 	* Log out user.
@@ -144,29 +172,27 @@ signals:
 
 	/**
 	* Get names of all online users.
-	* @return std::vector<std::string> container of users names
 	*/
 	void getOnlineUsers();
 
 
 	/**
 	* Sign in new user.
-	* @param std::string user name
-	* @param std::string password of user
-	* @return bool true if new user is successfully signed in
+	* @param Qstring user name
+	* @param Qstring password of user
 	*/
 	void signIn(QString userName, QString password);
 
 	/**
 	* Log in to the server with user name and password.
 	* If log in is successful, new thread is created and callbacks can be immediately executed.
-	* @param std::string user name
-	* @param std::string password of user
-	* @return bool true if user is successfully logged in
+	* @param Qstring user name
+	* @param Qstring password of user
 	*/
 	void logIn(QString userName, QString password);
 
 	public slots:
+
 	void signalconnected(bool isConnected)
 	{
 		if (isConnected)

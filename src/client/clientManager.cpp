@@ -58,7 +58,7 @@ bool ClientManager::isConnected() const {
 }
 
 void ClientManager::disconnect() {
-	m_isConnected = true;
+	m_isConnected = false;
 	m_serverSocket->disconnectFromHost();
 	delete m_serverSocket;
 	m_serverSocket = nullptr;

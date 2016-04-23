@@ -75,12 +75,7 @@ public:
     bool sendMessage(quint8 messageType, QString message);
 
 signals:
-	/**
-	 * Disconnect client
-	 * @param Client* client, after call this function, pointer will be invalid
-	 */
-	void disconnect();
-
+	
 	/**
 	* Log in client as user
 	* @param Client& client object

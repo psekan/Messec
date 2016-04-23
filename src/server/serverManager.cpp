@@ -99,7 +99,6 @@ void ServerManager::start()
 void ServerManager::incomingConnection(qintptr handle)
 {
 	Client* client = clientConnect(handle);
-	connect(client, SIGNAL(disconnect()), this, SLOT(clientDisconnect()));
 	connect(client, SIGNAL(finished()), this, SLOT(clientDisconnect()));
 }
 
@@ -216,7 +215,7 @@ void ServerManager::clientDisconnect() {
 	Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null\n";
+		std::cerr << "Client is null - clientDisconnect\n";
 		return;
 	}
 
@@ -224,6 +223,7 @@ void ServerManager::clientDisconnect() {
 	auto it = std::find(m_clients.begin(), m_clients.end(), client);
 	m_clients.erase(it);
 	delete client;
+	std::cout << "client deleted" << std::endl;
 }
 
 void ServerManager::clientLogIn(QString userName, QString password, Client* client) {
@@ -232,7 +232,7 @@ void ServerManager::clientLogIn(QString userName, QString password, Client* clie
 	
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null\n";
+		std::cerr << "Client is null - clientLogIn\n";
 		return;
 	}
 	if (userAuthentication(userName.toStdString(), password.toStdString()))
@@ -254,7 +254,7 @@ void ServerManager::clientSignIn(QString userName, QString password, Client* cli
 
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null\n";
+		std::cerr << "Client is null - clientSignIn\n";
 		return;
 	}
 
@@ -274,7 +274,7 @@ void ServerManager::clientSignIn(QString userName, QString password, Client* cli
 void ServerManager::clientLogOut(Client* client) {
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null\n";
+		std::cerr << "Client is null - clientLogOut\n";
 		return;
 	}
 	client->logOutUser();
@@ -290,20 +290,22 @@ void ServerManager::getOnlineUsers(Client* client) {
 
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null\n";
+		std::cerr << "Client is null - getOnlineUsers\n";
 		return;
 	}
 
 	QString message;
-	QMutexLocker locker(&mutex);          
+	QMutexLocker locker(&mutex);    
+	bool first = true;
 	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
 	{
 		if ((*it)->isLoggedIn())
 		{
-			if (it != m_clients.begin()) {
+			if (!first) {
 				message += "|#|";
 			}
-			message += QString::fromStdString((*it)->m_userName);
+			message += QString::fromStdString((*it)->m_userName);			
+			first = false;
 		}
 	}
 	locker.unlock();

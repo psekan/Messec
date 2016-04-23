@@ -101,6 +101,5 @@ void Client::readData()
 
 void Client::quit()
 {
-	emit disconnect();
 	exit(0);
 }
