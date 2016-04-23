@@ -4,6 +4,7 @@
 
 #include "clientManager.h"
 #include <QHostAddress>
+#include <QStringList>
 #include <cstring>
 #include <iostream>
 #include <QDataStream>
