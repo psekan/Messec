@@ -15,7 +15,6 @@ env:
     - secure: "CrB159u8KEwtsiCxnwvnCumiRkGgL+9aFgI2dosUvj3PtfebcVdhzRKBt+17jLapLCQEYoml8RVszLNuYpZu8y/3DhCk4ftWMumnvKOp8CIFb/4BFKMZxyuw+HlMg5oKwY4GOopnHo4mTEM51pDHMP8rfIxCjLimVeDc0uZaaj8="
   matrix:
     - CONFIG=release
-    #- CONFIG=debug
   
 before_install:
   - wget https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.1.4.tar.gz
@@ -23,10 +22,10 @@ before_install:
   - sudo mv mbedtls-mbedtls-2.1.4 /usr/local/share/mbedtls 
 install:  
   - lsb_release -a
+      && sudo apt-add-repository -y ppa:ubuntu-sdk-team/ppa
       && sudo apt-add-repository -y ppa:ubuntu-toolchain-r/test
-      && sudo apt-add-repository -y ppa:beineri/opt-qt542
       && sudo apt-get -qq update
-      && sudo apt-get -qq install g++-4.8 qt54script
+      && sudo apt-get -qq install g++-4.8 qtbase5-dev qt5-default
       && export CXX="g++-4.8"
       && export CC="gcc-4.8"   
   - make -C /usr/local/share/mbedtls no_test 
