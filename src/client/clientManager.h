@@ -65,10 +65,10 @@ public:
      */
     bool isConnected() const;
 
-    /**
-     * Disconnect client from server.
-     */
-    void disconnect();
+	/**
+	* Disconnect client from server.
+	*/
+	void disconnect();
 
     /**
      * Check if client is logged in to the server.
@@ -138,6 +138,7 @@ public slots:
 	* @return bool true if user is successfully logged in
 	*/
 	void logIn(QString userName, QString password);
+
 };
 
 
