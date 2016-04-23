@@ -2,9 +2,9 @@
 // Created by Peter on 12.03.2016.
 //
 
+#include <QStringList>
 #include "clientManager.h"
 #include <QHostAddress>
-#include <QStringList>
 #include <cstring>
 #include <iostream>
 #include <QDataStream>
