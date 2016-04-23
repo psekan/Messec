@@ -107,7 +107,7 @@ void ClientManager::logIn(QString userName, QString password) {
 	str << messageType;
 	str << QString::fromStdString(userName.toStdString());
 	str << QString::fromStdString(password.toStdString());
-	std::cout << "sending data to server" << std::endl;
+	std::cout << "seidng data to server" << std::endl;
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
 	std::cout << "waiting for response" << std::endl;
@@ -167,7 +167,7 @@ void ClientManager::getOnlineUsers() {
 	u >> messageType;
 	u >> message;
 
-	if (messageType != MESSAGETYPE_GET_ONLINE_USERS)
+	if (!messageType == MESSAGETYPE_GET_ONLINE_USERS)
 	{
 		std::cerr << "Error while getting all online users" << std::endl;
 		emit getOnlineUsersResult(QStringList());
