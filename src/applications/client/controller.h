@@ -9,7 +9,7 @@
 #include <iostream>
 #include <QThread>
 #include <clientManager.h>
-#define  COMMAND_COUNT 7
+#define  COMMAND_COUNT 8
 
 using namespace std;
 
@@ -17,8 +17,8 @@ class Controler : public QThread
 {
 	Q_OBJECT
 		ClientManager *clientMngr;
-	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS };
-	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users" };
+	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS, HELP };
+	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users", "help" };
 
 public:
 
@@ -55,6 +55,7 @@ public:
 		string inCommand;
 		int commandIndex;
 		bool runOk = true;
+		cout << "commands: quit | connect | disconnect | signin | login | logout | users | help" << endl;
 		while (runOk) {
 			cin >> inCommand;
 			commandIndex = -1;
@@ -138,6 +139,10 @@ public:
 					break;
 				}*/
 				emit getOnlineUsers();
+				break;
+			}
+			case HELP: {
+				cout << "commands: quit | connect | disconnect | signin | login | logout | users | help" << endl;
 				break;
 			}
 			default: {
