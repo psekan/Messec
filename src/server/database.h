@@ -67,6 +67,13 @@ class Database
 	mutable QMutex mutex;
 	
 	void freeLastError();
+
+	/**
+	* Get user row from database
+	* @param std::string user name
+	* @return UserDatabaseRow
+	*/
+	UserDatabaseRow getUserWithoutMutex(std::string userName);
 public:
 
 	/**

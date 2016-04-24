@@ -18,6 +18,7 @@ void Client::run() {
 	socket = new QTcpSocket(NULL);
 	socket->setSocketDescriptor(sock_ptr);
 	connect(this, SIGNAL(finished()), this, SLOT(deleteLater()), Qt::DirectConnection);
+	connect(parent(), SIGNAL(finished()), this, SLOT(quit()), Qt::DirectConnection);
 	connect(socket, SIGNAL(readyRead()), this, SLOT(readData()), Qt::DirectConnection);
 	connect(socket, SIGNAL(disconnected()), this, SLOT(quit()), Qt::DirectConnection);
 	const QHostAddress &connected = socket->peerAddress();

@@ -84,6 +84,11 @@ ServerManager::ServerManager(std::string dbFilePath, qint16 port, quint16 keySiz
 	//TODO init rsa
 }
 
+ServerManager::~ServerManager()
+{
+
+}
+
 /*Network*/
 void ServerManager::start()
 {

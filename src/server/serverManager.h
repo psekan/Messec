@@ -62,6 +62,8 @@ public:
 	*/
 	explicit ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent = 0);
 
+	~ServerManager();
+
 	/**
 	* @brief start Method starts infinite loop
 	*/
