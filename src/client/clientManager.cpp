@@ -9,7 +9,7 @@
 #include <QDataStream>
 #include <messageTypes.h>
 
-ClientManager::ClientManager(QObject *parent) : parent(parent){// : QTcpServer(parent) {
+ClientManager::ClientManager(QObject *parent){
 	m_isLoggedIn = false;
 	m_isConnected = false;
 	m_serverSocket = nullptr;
@@ -20,7 +20,7 @@ ClientManager::~ClientManager() {
 }
 
 bool ClientManager::signalconnect(QString ip, int port) {
-	m_serverSocket = new QTcpSocket(parent);
+	m_serverSocket = new QTcpSocket(this);
 	QHostAddress addr(ip);
 	m_serverSocket->connectToHost(addr, port);
 	if (!m_serverSocket->waitForConnected()) {
@@ -155,10 +155,12 @@ void ClientManager::getOnlineUsers() {
 	{
 		QStringList users = message.split("|#|");
 		std::cout << "Online users:" << std::endl;
+		std::cout << "---------" << std::endl;
 		for (QString user : users)
 		{
 			std::cout << user.toStdString() << std::endl;
 		}
+		std::cout << "---------" << std::endl;
 	}
 }
 

@@ -16,23 +16,25 @@ using namespace std;
 class Controler : public QThread
 {
 	Q_OBJECT
-		ClientManager *clientMngr;
 	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS, HELP };
 	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users", "help" };
 
 public:
+	/**
+	* constructor
+	*/
+	Controler(QObject *parent = 0) : QThread(parent){}
 
-	Controler(QObject *parent = 0) : QThread(parent)
-	{
-		clientMngr = new ClientManager(this);
-	}
+	/**
+	* destructor
+	*/
+	virtual ~Controler(){}
 
-	virtual ~Controler()
-	{
-		delete clientMngr;
-	}
-
+	/**
+	* gets commands from cin and executes proper functions
+	*/
 	void run() override {
+		ClientManager clientMngr(this);
 		string inCommand;
 		int commandIndex;
 		bool runOk = true;
@@ -52,11 +54,11 @@ public:
 				break;
 			}
 			case CONNECT: {
-				/*if (clientMngr->isConnected())         // pre testovanie zakomentovane
+				if (clientMngr.isConnected())
 				{
 				std::cout << "you are already connected" << std::endl;
 				break;
-				}*/
+				}
 				string ipaddr;
 				int port = 0;
 
@@ -64,62 +66,72 @@ public:
 				cin >> ipaddr;
 				cout << "Write host port: ";
 				cin >> port;
-				clientMngr->signalconnect(QString(ipaddr.c_str()), port);
+				clientMngr.signalconnect(QString(ipaddr.c_str()), port);
 				break;
 			}
 			case DISCONNECT: {
-				/*if (!clientMngr->isConnected())         // pre testovanie zakomentovane
+				if (!clientMngr.isConnected())
 				{
 				std::cout << "you are not connected - you cant disconnect" << std::endl;
 				break;
-				}*/
-				clientMngr->disconnect();
+				}
+				clientMngr.disconnect();
 				break;
 			}
 			case SIGNIN: {
-				/*if (!clientMngr->isConnected())         // pre testovanie zakomentovane
+				if (!clientMngr.isConnected())
 				{
-				std::cout << "you are not connected" << std::endl;
-				break;
-				}*/
+					std::cout << "you are not connected" << std::endl;
+					break;
+				}
+				else if (clientMngr.isLoggedIn())
+				{
+					std::cout << "you are still logged in" << std::endl;
+					break;
+				}				
 				string name, password;
 				cout << "User name: ";
 				cin >> name;
 				cout << "User password: ";
 				cin >> password;
-				clientMngr->signIn(QString(name.c_str()), QString(password.c_str()));
+				clientMngr.signIn(QString(name.c_str()), QString(password.c_str()));
 				break;
 			}
 			case LOGIN: {
-				/*if (clientMngr->isLoggedIn())         // pre testovanie zakomentovane
+				if (!clientMngr.isConnected())
+				{
+					std::cout << "you are not connected" << std::endl;
+					break;
+				}
+				else if (clientMngr.isLoggedIn())
 				{
 					std::cout << "you are already logged in" << std::endl;
 					break;
-				}*/
+				}
 				string name, password;
 				cout << "User name: ";
 				cin >> name;
 				cout << "User password: ";
 				cin >> password;
-				clientMngr->logIn(QString(name.c_str()), QString(password.c_str()));
+				clientMngr.logIn(QString(name.c_str()), QString(password.c_str()));
 				break;
 			}
 			case LOGOUT: {
-				/*if (!clientMngr->isLoggedIn())    // pre testovanie zakomentovane
+				if (!clientMngr.isLoggedIn())
 				{
 					std::cout << "you are not logged in" << std::endl;
 					break;
-				}*/
-				clientMngr->logOut();
+				}
+				clientMngr.logOut();
 				break;
 			}
 			case USERS: {
-				/*if(!clientMngr->isLoggedIn())    // pre testovanie zakomentovane
+				if(!clientMngr.isLoggedIn())
 				{
 					std::cout << "you are not logged in" << std::endl;
 					break;
-				}*/
-				clientMngr->getOnlineUsers();
+				}
+				clientMngr.getOnlineUsers();
 				break;
 			}
 			case HELP: {

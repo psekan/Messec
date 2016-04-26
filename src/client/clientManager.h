@@ -19,9 +19,8 @@
 
 class ClientManager : public QTcpServer {
 	Q_OBJECT
-	
-	QObject *parent;
-    //Boolean values
+
+	//Boolean values
     bool m_isConnected;
     bool m_isLoggedIn;
 
@@ -40,7 +39,7 @@ public:
 	/**
 	* construcor
 	*/
-	ClientManager(QObject *parent = 0);
+	ClientManager(QObject *parent);
 
 	/**
 	* destructor calls disconnect
