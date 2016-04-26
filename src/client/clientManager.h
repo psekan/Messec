@@ -14,17 +14,13 @@
 #include "messenger.h"
 #include "../common/connectionErrors.h"
 #include <QThread>
+#include <QTcpServer>
 
-class ClientManager : public QThread {
+
+class ClientManager : public QTcpServer {
 	Q_OBJECT
-
-    //Callbacks
-    /*std::function<void(ConnectionErrors)> m_connectionLostCallback;
-    std::function<void(std::string,bool)> m_userChangeStatusCallback;
-    std::function<bool(std::string)> m_newRequestCallback;
-    std::function<void(std::string)> m_requestRejectedCallback;
-    std::function<void(std::string, Messenger*)> m_newCommunicationStartedCallback;*/
-
+	
+	QObject *parent;
     //Boolean values
     bool m_isConnected;
     bool m_isLoggedIn;
@@ -40,23 +36,15 @@ class ClientManager : public QThread {
     //Online users
     std::vector<std::string> m_onlineUsers;
 
-	void run() override;
 public:
-    /**
-     * Create new client manager and set callbacks. First argument in all callbacks is user name.
-     * @param connectionLostCallback           Connection with server was lost. User will be log out and no more callbacks will be executed.
-     * @param userChangeStatusCallback         User is logged in (second argument == true) or logged out (false).
-     * @param newRequestCallback               User want to communicate with this client. Is callback return true, request is accepted, otherwise is rejected.
-     * @param requestRejectedCallback          User reject this client request for communication.
-     * @param newCommunicationStartedCallback  Request was accepted and communication started. Communication is handled with Messenger in second argument.
-     */
-    /*ClientManager(std::function<void(ConnectionErrors)> connectionLostCallback,
-                  std::function<void(std::string,bool)> userChangeStatusCallback,
-                  std::function<bool(std::string)> newRequestCallback,
-                  std::function<void(std::string)> requestRejectedCallback,
-                  std::function<void(std::string, Messenger*)> newCommunicationStartedCallback);*/
+	/**
+	* construcor
+	*/
 	ClientManager(QObject *parent = 0);
 
+	/**
+	* destructor calls disconnect
+	*/
 	~ClientManager();
 
     /**
@@ -83,26 +71,14 @@ public:
      * @return bool false if user is not logged in
      */
     bool startCommunicationWith(std::string userName);
-signals:
 
-	void connectionLost();
-
-	void signalconnected(bool isConnected);
-
-	void signInResult(bool result);
-
-	void logInResult(bool result);
-
-	void getOnlineUsersResult(QStringList users);
-
-public slots:
 	/**
 	* Connect client to server.
 	* @param std::string IPv4 of server
 	* @param int tcp port number of server
 	* @return bool true if connection is successfully realized.
 	*/
-	void signalconnect(QString ip, int port);
+	bool signalconnect(QString ip, int port);
 
 	/**
 	* Disconnect client from server.
@@ -128,7 +104,7 @@ public slots:
 	* @param std::string password of user
 	* @return bool true if new user is successfully signed in
 	*/
-	void signIn(QString userName, QString password);
+	bool signIn(QString userName, QString password);
 
 	/**
 	* Log in to the server with user name and password.
@@ -137,7 +113,7 @@ public slots:
 	* @param std::string password of user
 	* @return bool true if user is successfully logged in
 	*/
-	void logIn(QString userName, QString password);
+	bool logIn(QString userName, QString password);
 
 };
 

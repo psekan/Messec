@@ -9,48 +9,28 @@
 #include <QDataStream>
 #include <messageTypes.h>
 
-/*ClientManager::ClientManager(std::function<void(ConnectionErrors)> connectionLostCallback, std::function<void(std::string, bool)> userChangeStatusCallback, std::function<bool(std::string)> newRequestCallback, std::function<void(std::string)> requestRejectedCallback, std::function<void(std::string, Messenger*)> newCommunicationStartedCallback) {
-	m_connectionLostCallback = connectionLostCallback;
-	m_newCommunicationStartedCallback = newCommunicationStartedCallback;
-	m_newRequestCallback = newRequestCallback;
-	m_requestRejectedCallback = requestRejectedCallback;
-	m_userChangeStatusCallback = userChangeStatusCallback;
-
-	m_isLoggedIn = false;
-	m_isConnected = false;
-	m_serverSocket = 0;
-}*/
-
-ClientManager::ClientManager(QObject *parent) : QThread(parent) {
+ClientManager::ClientManager(QObject *parent) : parent(parent){// : QTcpServer(parent) {
 	m_isLoggedIn = false;
 	m_isConnected = false;
 	m_serverSocket = nullptr;
 }
 
 ClientManager::~ClientManager() {
-	if (m_serverSocket != nullptr) {
-		m_serverSocket->disconnectFromHost();
-		delete m_serverSocket;
-	}
+	disconnect();
 }
 
-void ClientManager::run() {
-	exec();
-}
-
-
-void ClientManager::signalconnect(QString ip, int port) {
-	m_serverSocket = new QTcpSocket(this);
+bool ClientManager::signalconnect(QString ip, int port) {
+	m_serverSocket = new QTcpSocket(parent);
 	QHostAddress addr(ip);
 	m_serverSocket->connectToHost(addr, port);
 	if (!m_serverSocket->waitForConnected()) {
 		std::cerr << "Could not connect to " << ip.toStdString() << ", " << addr.toString().toStdString() << std::endl;
-		emit signalconnected(false);
-		return;
+		std::cout << "Connect failed" << std::endl;
+		return false;
 	}
 	m_isConnected = true;
-	emit signalconnected(true);
-	return;
+	std::cout << "Successfully connected" << std::endl;
+	return true;
 }
 
 bool ClientManager::isConnected() const {
@@ -58,13 +38,16 @@ bool ClientManager::isConnected() const {
 }
 
 void ClientManager::disconnect() {
-	m_isConnected = false;
-	m_serverSocket->disconnectFromHost();
-	delete m_serverSocket;
-	m_serverSocket = nullptr;
+	if (m_serverSocket != nullptr) 
+	{
+		m_isConnected = false;
+		m_serverSocket->disconnectFromHost();
+		delete m_serverSocket;
+		m_serverSocket = nullptr;
+	}
 }
 
-void ClientManager::signIn(QString userName, QString password) {
+bool ClientManager::signIn(QString userName, QString password) {
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_SIGNIN;
@@ -82,35 +65,34 @@ void ClientManager::signIn(QString userName, QString password) {
 	u >> messageType;
 	u >> message;
 	
-	std::cout << "response is: " << std::endl;
-	
+	std::cout << "sign in ";	
 	if(messageType == MESSAGETYPE_SIGNIN_SUCCESS)
 	{
-		std::cout << "succes" << std::endl;
+		std::cout << "successful" << std::endl;
+		return true;
 	}
 	else if(messageType == MESSAGETYPE_SIGNIN_FAIL)
 	{
-		std::cout << "failure" << std::endl;
+		std::cout << "failed" << std::endl;
 	}
 	else
 	{
-		std::cout << "WTF?!!!: toto prislo " << messageType << " " << message.toStdString() << std::endl;
+		std::cout << "failed with incoming unknown message: " << messageType << " " << message.toStdString() << std::endl;
 	}
-
-	emit signInResult(messageType == MESSAGETYPE_SIGNIN_SUCCESS);
+	return false;
 }
 
-void ClientManager::logIn(QString userName, QString password) {
+bool ClientManager::logIn(QString userName, QString password) {
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_LOGIN;
 	str << messageType;
 	str << QString::fromStdString(userName.toStdString());
 	str << QString::fromStdString(password.toStdString());
-	std::cout << "sending data to server" << std::endl;
+	std::cout << "sending data to server" << std::endl; /////////////////////////debug print
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
-	std::cout << "waiting for response" << std::endl;
+	std::cout << "waiting for response" << std::endl; //////////////////////////debug print
 	m_serverSocket->waitForReadyRead();
 
 	QDataStream u(m_serverSocket);
@@ -118,23 +100,23 @@ void ClientManager::logIn(QString userName, QString password) {
 	u >> messageType;
 	u >> message;
 	
-	std::cout << "response is: " << std::endl;
+	std::cout << "log in ";
 	
 	if (messageType == MESSAGETYPE_LOGIN_SUCCESS)
 	{
-		std::cout << "succes" << std::endl;
+		std::cout << "successful" << std::endl;
+		m_isLoggedIn = true;
+		return true;
 	}
 	else if(messageType == MESSAGETYPE_LOGIN_FAIL)
 	{
-		std::cout << "failure" << std::endl;
+		std::cout << "failed" << std::endl;
 	}
 	else
 	{
-		std::cout << "WTF?!!!: toto prislo " << messageType << " " << message.toStdString() << std::endl;
+		std::cout << "failed with incoming unknown message: " << messageType << " " << message.toStdString() << std::endl;
 	}
-
-	m_isLoggedIn = true;
-	emit logInResult(messageType == MESSAGETYPE_LOGIN_SUCCESS);
+	return false;
 }
 
 bool ClientManager::isLoggedIn() const {
@@ -152,8 +134,6 @@ void ClientManager::logOut() {
 }
 
 void ClientManager::getOnlineUsers() {
-	//return m_onlineUsers;
-
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_GET_ONLINE_USERS;
@@ -170,11 +150,16 @@ void ClientManager::getOnlineUsers() {
 	if (messageType != MESSAGETYPE_GET_ONLINE_USERS)
 	{
 		std::cerr << "Error while getting all online users" << std::endl;
-		emit getOnlineUsersResult(QStringList());
 	}
-
-	QStringList users = message.split("|#|");
-	emit getOnlineUsersResult(users);
+	else
+	{
+		QStringList users = message.split("|#|");
+		std::cout << "Online users:" << std::endl;
+		for (QString user : users)
+		{
+			std::cout << user.toStdString() << std::endl;
+		}
+	}
 }
 
 std::vector<Messenger*> ClientManager::getMessengers() const {

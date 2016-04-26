@@ -25,25 +25,6 @@ public:
 	Controler(QObject *parent = 0) : QThread(parent)
 	{
 		clientMngr = new ClientManager(this);
-		QObject::connect(clientMngr, SIGNAL(finished()), this, SLOT(quit()));
-
-		connect(this, SIGNAL(signalDisconnect()), clientMngr, SLOT(disconnect()));
-
-		connect(this, SIGNAL(signalconnect(QString, int)), clientMngr, SLOT(signalconnect(QString, int)));
-		connect(clientMngr, SIGNAL(signalconnected(bool)), this, SLOT(signalconnected(bool)));
-
-		connect(this, SIGNAL(getOnlineUsers()), clientMngr, SLOT(getOnlineUsers()));
-		connect(clientMngr, SIGNAL(getOnlineUsersResult(QStringList)), this, SLOT(getOnlineUsersResult(QStringList)));
-
-		connect(this, SIGNAL(signIn(QString, QString)), clientMngr, SLOT(signIn(QString, QString)));
-		connect(clientMngr, SIGNAL(signInResult(bool)), this, SLOT(signInResult(bool)));
-
-		connect(this, SIGNAL(logIn(QString, QString)), clientMngr, SLOT(logIn(QString, QString)));
-		connect(clientMngr, SIGNAL(logInResult(bool)), this, SLOT(logInResult(bool)));
-
-		connect(this, SIGNAL(logOut()), clientMngr, SLOT(logOut()));
-
-		clientMngr->start();
 	}
 
 	virtual ~Controler()
@@ -83,7 +64,7 @@ public:
 				cin >> ipaddr;
 				cout << "Write host port: ";
 				cin >> port;
-				emit signalconnect(QString(ipaddr.c_str()), port);
+				clientMngr->signalconnect(QString(ipaddr.c_str()), port);
 				break;
 			}
 			case DISCONNECT: {
@@ -92,7 +73,7 @@ public:
 				std::cout << "you are not connected - you cant disconnect" << std::endl;
 				break;
 				}*/
-				emit signalDisconnect();
+				clientMngr->disconnect();
 				break;
 			}
 			case SIGNIN: {
@@ -106,7 +87,7 @@ public:
 				cin >> name;
 				cout << "User password: ";
 				cin >> password;
-				emit signIn(QString(name.c_str()), QString(password.c_str()));
+				clientMngr->signIn(QString(name.c_str()), QString(password.c_str()));
 				break;
 			}
 			case LOGIN: {
@@ -120,7 +101,7 @@ public:
 				cin >> name;
 				cout << "User password: ";
 				cin >> password;
-				emit logIn(QString(name.c_str()), QString(password.c_str()));
+				clientMngr->logIn(QString(name.c_str()), QString(password.c_str()));
 				break;
 			}
 			case LOGOUT: {
@@ -129,7 +110,7 @@ public:
 					std::cout << "you are not logged in" << std::endl;
 					break;
 				}*/
-				emit logOut();
+				clientMngr->logOut();
 				break;
 			}
 			case USERS: {
@@ -138,7 +119,7 @@ public:
 					std::cout << "you are not logged in" << std::endl;
 					break;
 				}*/
-				emit getOnlineUsers();
+				clientMngr->getOnlineUsers();
 				break;
 			}
 			case HELP: {
@@ -151,98 +132,8 @@ public:
 			}
 			}
 		}
-		clientMngr->exit(0);
 		exit(0);
 	}
-
-signals:
-	/**
-	* connects client with server
-	* @param Qstring addr ip of server to connect
-	* @param int port number of port to connect
-	*/
-	void signalconnect(QString addr, int port);
-	
-	/**
-	* disconnects client from server
-	* clientManager is still running
-	*/
-	void signalDisconnect();
-
-	/**
-	* Log out user.
-	* Thread will be stopped, no more callbacks will be executed.
-	*/
-	void logOut();
-
-	/**
-	* Get names of all online users.
-	*/
-	void getOnlineUsers();
-
-
-	/**
-	* Sign in new user.
-	* @param Qstring user name
-	* @param Qstring password of user
-	*/
-	void signIn(QString userName, QString password);
-
-	/**
-	* Log in to the server with user name and password.
-	* If log in is successful, new thread is created and callbacks can be immediately executed.
-	* @param Qstring user name
-	* @param Qstring password of user
-	*/
-	void logIn(QString userName, QString password);
-
-	public slots:
-
-	void signalconnected(bool isConnected)
-	{
-		if (isConnected)
-		{
-			cout << "Successfully connected" << endl;
-		}
-		else
-		{
-			cout << "Connect fail" << endl;
-		}
-	}
-
-	void signInResult(bool result)
-	{
-		if (result)
-		{
-			cout << "Sign in successful" << endl;
-		}
-		else
-		{
-			cout << "Sign in fail" << endl;
-		}
-	}
-
-	void logInResult(bool result)
-	{
-		if (result)
-		{
-			cout << "Log in successful" << endl;
-		}
-		else
-		{
-			cout << "Log in fail" << endl;
-		}
-	}
-
-	void getOnlineUsersResult(QStringList users)
-	{
-		cout << "Online users:" << endl;
-		for (QString user : users)
-		{
-			cout << user.toStdString() << endl;
-		}
-	}
-
 
 };
 
