@@ -81,7 +81,6 @@ void Client::readData()
 	case MESSAGETYPE_SIGNIN:
 		std::cout << "singin initialized" << std::endl;
 		input >> userName >> userPassword;
-		std::cout << "data have been read" << std::endl;
 		server->clientSignIn(userName, userPassword, this);
 		std::cout << "signin end" << std::endl;
 		break;
@@ -94,6 +93,14 @@ void Client::readData()
 		std::cout << "listing of users initialized" << std::endl;
 		server->getOnlineUsers(this);
 		std::cout << "listing of users end" << std::endl;
+		break;
+	case MESSAGETYPE_SEND_PORT:
+		std::cout << "setting client port" << std::endl;
+		quint16 port;
+		input >> port;
+		setClientPort(port);
+		std::cout << "client port is " << getClientPort() << std::endl;
+		std::cout << "setting client port end" << std::endl;
 		break;
 	default:
 		std::cout << "Wrong message type" << std::endl;

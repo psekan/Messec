@@ -30,6 +30,7 @@ class ClientManager : public QTcpServer {
     unsigned char m_aesKey[32];
 
     //Connections with other clients
+	quint16 clientPort;
     std::vector<Messenger*> m_messengers;
 
     //Online users
@@ -39,12 +40,32 @@ public:
 	/**
 	* construcor
 	*/
-	ClientManager(QObject *parent);
+	ClientManager();
 
 	/**
 	* destructor calls disconnect
 	*/
 	~ClientManager();
+
+	/**
+	* create Tcp server and listen
+	* other clients connect to this server
+	*/
+	void start();
+
+	/**
+	* clientPort setter, port of server which listens for other clients
+	*/
+	void setPort(quint16 port) {
+		clientPort = port;
+	}
+
+	/**
+	* clientPort getter, port of server which listens for other clients
+	*/
+	quint16 getPort() {
+		return clientPort;
+	}
 
     /**
      * Check if client is connected to server.

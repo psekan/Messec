@@ -34,7 +34,8 @@ public:
 	* gets commands from cin and executes proper functions
 	*/
 	void run() override {
-		ClientManager clientMngr(this);
+		ClientManager clientMngr;
+		clientMngr.start();
 		string inCommand;
 		int commandIndex;
 		bool runOk = true;

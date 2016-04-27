@@ -9,15 +9,27 @@
 #include <QDataStream>
 #include <messageTypes.h>
 
-ClientManager::ClientManager(QObject *parent){
-	m_isLoggedIn = false;
-	m_isConnected = false;
-	m_serverSocket = nullptr;
-}
+ClientManager::ClientManager(): m_isLoggedIn(false), m_isConnected (false), m_serverSocket (nullptr), QTcpServer(0) {}
 
 ClientManager::~ClientManager() {
 	disconnect();
+	exit(0);
 }
+
+void ClientManager::start() {
+	if (!this->listen(QHostAddress::Any, 0)) {
+		std::cout << "fail" << std::endl;
+		qDebug() << "Server start failed";
+		qDebug() << this->errorString();
+		exit(0);
+	}
+	else
+	{
+		setPort(serverPort());
+		std::cout << "success on port " << clientPort << std::endl; ////////////////////////debug print
+	}
+	}
+
 
 bool ClientManager::signalconnect(QString ip, int port) {
 	m_serverSocket = new QTcpSocket(this);
@@ -28,6 +40,13 @@ bool ClientManager::signalconnect(QString ip, int port) {
 		std::cout << "Connect failed" << std::endl;
 		return false;
 	}
+	QByteArray arr;
+	QDataStream str(&arr, QIODevice::WriteOnly);
+	quint8 messageType = MESSAGETYPE_SEND_PORT;
+	str << messageType;
+	str << getPort();
+	m_serverSocket->write(arr);
+	m_serverSocket->waitForBytesWritten();
 	m_isConnected = true;
 	std::cout << "Successfully connected" << std::endl;
 	return true;

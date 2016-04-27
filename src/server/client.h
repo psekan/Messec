@@ -20,6 +20,7 @@ class Client : public QThread
 	Q_OBJECT
 	qintptr sock_ptr;
 	QTcpSocket *socket;
+	quint16 clientPort;
 
     //Boolean values
     bool m_isLoggedIn;
@@ -60,6 +61,20 @@ public:
      * @return bool
      */
     bool isLoggedIn() const;
+
+	/**
+	* clientPort setter, port of server which listens for other clients
+	*/
+	void setClientPort(quint16 port) {
+		clientPort = port;
+	}
+
+	/**
+	* clientPort getter, port of server which listens for other clients
+	*/
+	quint16 getClientPort() {
+		return clientPort;
+	}
 
     /**
      * Get client ip.
