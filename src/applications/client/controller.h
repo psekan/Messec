@@ -9,15 +9,15 @@
 #include <iostream>
 #include <QThread>
 #include <clientManager.h>
-#define  COMMAND_COUNT 8
+#define  COMMAND_COUNT 10
 
 using namespace std;
 
 class Controler : public QThread
 {
 	Q_OBJECT
-	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS, HELP };
-	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users", "help" };
+	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS, CHAT, SEND, HELP };
+	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users", "chat", "send", "help" };
 
 public:
 	/**
@@ -39,7 +39,7 @@ public:
 		string inCommand;
 		int commandIndex;
 		bool runOk = true;
-		cout << "commands: quit | connect | disconnect | signin | login | logout | users | help" << endl;
+		cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | send | help" << endl;
 		while (runOk) {
 			cin >> inCommand;
 			commandIndex = -1;
@@ -133,6 +133,27 @@ public:
 					break;
 				}
 				clientMngr.getOnlineUsers();
+				break;
+			}
+			case CHAT: {
+				if (!clientMngr.isLoggedIn())
+				{
+					std::cout << "you are not logged in" << std::endl;
+					break;
+				}
+				string partner;
+				cout << "Name: ";
+				cin >> partner;
+				clientMngr.startCommunicationWith(QString(partner.c_str()));
+				break;
+			}
+			case SEND: {
+				if (!clientMngr.isLoggedIn())
+				{
+					std::cout << "you are not logged in" << std::endl;
+					break;
+				}
+				/////////////// TODO
 				break;
 			}
 			case HELP: {

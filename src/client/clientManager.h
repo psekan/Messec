@@ -20,21 +20,21 @@
 class ClientManager : public QTcpServer {
 	Q_OBJECT
 
-	//Boolean values
-    bool m_isConnected;
-    bool m_isLoggedIn;
+		//Boolean values
+		bool m_isConnected;
+	bool m_isLoggedIn;
 
-    //Connection with server
+	//Connection with server
 	QTcpSocket* m_serverSocket;
-    mbedtls_rsa_context m_serverKey;
-    unsigned char m_aesKey[32];
+	mbedtls_rsa_context m_serverKey;
+	unsigned char m_aesKey[32];
 
-    //Connections with other clients
+	//Connections with other clients
 	quint16 clientPort;
-    std::vector<Messenger*> m_messengers;
+	std::vector<Messenger*> m_messengers;
 
-    //Online users
-    std::vector<std::string> m_onlineUsers;
+	//Online users
+	std::vector<std::string> m_onlineUsers;
 
 public:
 	/**
@@ -67,30 +67,32 @@ public:
 		return clientPort;
 	}
 
-    /**
-     * Check if client is connected to server.
-     * @return bool true if connection is available
-     */
-    bool isConnected() const;
+	/**
+	 * Check if client is connected to server.
+	 * @return bool true if connection is available
+	 */
+	bool isConnected() const;
 
-    /**
-     * Check if client is logged in to the server.
-     * @return bool true if user is logged in
-     */
-    bool isLoggedIn() const;
+	/**
+	 * Check if client is logged in to the server.
+	 * @return bool true if user is logged in
+	 */
+	bool isLoggedIn() const;
 
-    /**
-     * Get all active messengers
-     * @return std::vector<Messenger*> container of references to messengers
-     */
-    std::vector<Messenger*> getMessengers() const;
+	Messenger* newMessenger(qintptr socketDescriptor, QString userName);
 
-    /**
-     * Create new request for communication with other online user.
-     * @param std::string user name
-     * @return bool false if user is not logged in
-     */
-    bool startCommunicationWith(std::string userName);
+	/**
+	 * Get all active messengers
+	 * @return std::vector<Messenger*> container of references to messengers
+	 */
+	std::vector<Messenger*> getMessengers() const;
+
+	/**
+	 * Create new request for communication with other online user.
+	 * @param std::string user name
+	 * @return bool false if user is not logged in
+	 */
+	bool startCommunicationWith(QString userName);
 
 	/**
 	* Connect client to server.
@@ -135,7 +137,8 @@ public:
 	*/
 	bool logIn(QString userName, QString password);
 
+public slots:
+	void deleteMessenger();
+
 };
-
-
 #endif //MESSEC_CLIENTMANAGER_H

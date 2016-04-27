@@ -24,6 +24,7 @@ class Client : public QThread
 
     //Boolean values
     bool m_isLoggedIn;
+	bool readyToCommuinicate;
 
     //Connection with client
     std::string m_userName;

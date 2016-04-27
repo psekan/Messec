@@ -286,13 +286,6 @@ void ServerManager::clientLogOut(Client* client) {
 }
 
 void ServerManager::getOnlineUsers(Client* client) {
-
-	/*	if (!client->isLoggedIn())              // toto je zakomentovane pre ucely testovania, testuje sa to ak v klientova pre istotu
-	{
-		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, QString(""));  //  zatial je tam nahodna sprava tak aby to nieco poslalo a nebolo toto spravne
-		return;
-	}*/
-
 	if (client == nullptr)
 	{
 		std::cerr << "Client is null - getOnlineUsers\n";
@@ -318,6 +311,45 @@ void ServerManager::getOnlineUsers(Client* client) {
 	client->sendMessage(MESSAGETYPE_GET_ONLINE_USERS, message);
 }
 
+void ServerManager::createCommunication(Client* srcClient, QString userName) {
+	if (srcClient == nullptr)
+	{
+		std::cerr << "Client is null - createCommunication\n";
+		return;
+	}
+	QString message;
+	QMutexLocker locker(&mutex);
+	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
+	{
+		if (((*it)->isLoggedIn()) && ((*it)->m_userName == userName.toStdString()) && ((*it)->readyToCommuinicate))
+		{
+			srcClient->readyToCommuinicate = false;
+			(*it)->readyToCommuinicate = false;
+			//message += QString::fromStdString((*it)->socket->peerAddress().toString().toStdString());
+			/*locker.unlock();
+			message += (*it)->clientPort;
+			message += (*it)->socket->peerAddress().toString();
+			//message += " ";
+			srcClient->sendMessage(MESSAGETYPE_PARTNER_INFO, message);
+			return;*/
+			
+
+			QByteArray array;
+			QDataStream output(&array, QIODevice::WriteOnly);
+			output << quint8(MESSAGETYPE_PARTNER_INFO);
+			output << (*it)->clientPort;
+			output << (*it)->socket->peerAddress().toString();
+
+			srcClient->socket->write(array);
+			srcClient->socket->waitForBytesWritten();
+			return;
+		}
+	}
+	locker.unlock();
+	message = "";
+	srcClient->sendMessage(MESSAGETYPE_PARTNER_NOT_READY, message);
+}
+
 /*TODO*/
 void ServerManager::processClientCommunication(Client* client) {
 	//TODO
@@ -331,7 +363,4 @@ void ServerManager::sendNewRequestToClient(Client* from, Client* to, unsigned ch
 	//TODO
 }
 
-void ServerManager::createCommunicationBetween(Client* communicationServer, Client* communicationClient) {
-	//TODO
-}
 

@@ -187,7 +187,64 @@ std::vector<Messenger*> ClientManager::getMessengers() const {
 	return m_messengers;
 }
 
-bool ClientManager::startCommunicationWith(std::string userName) {
-	//TODO
+Messenger* ClientManager::newMessenger(qintptr socketDescriptor, QString userName) {
+	Messenger* mes = new Messenger(socketDescriptor, userName, this);
+	mes->start();
+	//QMutexLocker locker(&mutex);
+	m_messengers.push_back(mes);
+	return mes;
+}
+
+void ClientManager::deleteMessenger() {
+	Messenger* msngr = dynamic_cast<Messenger*>(sender());
+	if (msngr == nullptr)
+	{
+		std::cerr << "Messenger is null - deleteMessenger\n";
+		return;
+	}
+
+	//QMutexLocker locker(&mutex);
+	auto it = std::find(m_messengers.begin(), m_messengers.end(), msngr);
+	m_messengers.erase(it);
+	delete msngr;
+	std::cout << "Messenger deleted" << std::endl; ////////////////////////////////////debug print
+}
+
+
+
+bool ClientManager::startCommunicationWith(QString userName) {
+	QByteArray arr;
+	QDataStream str(&arr, QIODevice::WriteOnly);
+	quint8 messageType = MESSAGETYPE_GET_PARTNER;
+	str << messageType;
+	str << userName;
+	m_serverSocket->write(arr);
+	m_serverSocket->waitForBytesWritten();
+	m_serverSocket->waitForReadyRead();
+
+	QDataStream response(m_serverSocket);
+	response >> messageType;
+	if (messageType == MESSAGETYPE_PARTNER_INFO)
+	{
+		QString ip;
+		quint16 port;
+		response >> port >> ip;
+		QTcpSocket* socket = new QTcpSocket(this);
+		QHostAddress addr(ip);
+		socket->connectToHost(addr, port);
+		if (!socket->waitForConnected()) {
+			std::cerr << "Could not connect to |" << ip.toStdString() << "|, " << addr.toString().toStdString() << " on port |" << port << "|" << std::endl;
+			std::cout << "Connect failed" << std::endl;
+			return false;
+		}
+		Messenger* msngr = newMessenger(socket->socketDescriptor(), userName);
+		connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
+		std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
+		return true;
+	}
+	else if (messageType == MESSAGETYPE_PARTNER_NOT_READY)
+		std::cout << "User " << userName.toStdString() << " is not ready for communication" << std::endl;
+	else 		
+		std::cout << "Incoming unknown messagetype: " << messageType << std::endl;
 	return false;
 }

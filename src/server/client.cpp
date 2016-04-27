@@ -10,7 +10,7 @@
 #include <iostream>
 #include <serverManager.h>
 
-Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false) {
+Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false), readyToCommuinicate(true) {
 	
 }
 
@@ -51,12 +51,12 @@ bool Client::sendMessage(quint8 messageType, QString message) {
 }
 
 void Client::logInUser(std::string userName) {
-	this->m_isLoggedIn = true;
-	this->m_userName = userName;
+	m_isLoggedIn = true;
+	m_userName = userName;
 }
 
 void Client::logOutUser() {
-	this->m_isLoggedIn = false;
+	m_isLoggedIn = false;
 }
 
 void Client::readData()
@@ -86,7 +86,7 @@ void Client::readData()
 		break;
 	case MESSAGETYPE_LOGOUT:
 		std::cout << "logout initialized" << std::endl;
-		server->clientLogOut(this);
+		logOutUser();
 		std::cout << "logout end" << std::endl;
 		break;
 	case MESSAGETYPE_GET_ONLINE_USERS:
@@ -101,6 +101,11 @@ void Client::readData()
 		setClientPort(port);
 		std::cout << "client port is " << getClientPort() << std::endl;
 		std::cout << "setting client port end" << std::endl;
+		break;
+	case MESSAGETYPE_GET_PARTNER:
+		input >> userName;
+		server->createCommunication(this, userName);
+
 		break;
 	default:
 		std::cout << "Wrong message type" << std::endl;

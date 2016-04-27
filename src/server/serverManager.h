@@ -8,6 +8,7 @@
 #include <qglobal.h>
 #include <QObject>
 #include <QTcpServer>
+#include <QDataStream>
 #include <string>
 #include <vector>
 #include <mbedtls/rsa.h>
@@ -45,13 +46,7 @@ class ServerManager : public QTcpServer
      */
     void sendNewRequestToClient(Client* from, Client* to, unsigned char hash[16]);
 
-    /**
-     * Generate aes key and send them to both client and send to clients their ip addresses.
-     * @param Client&
-     * @param Client&
-     */
-    void createCommunicationBetween(Client* communicationServer, Client* communicationClient);
-
+   
 public:
 	/**
 	* Create new server manager on sqlite database.
@@ -63,6 +58,14 @@ public:
 	explicit ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent = 0);
 
 	~ServerManager();
+
+	/**
+	* Generate aes key and send them to both client and send to clients their ip addresses.
+	* @param Client&
+	* @param Client&
+	*/
+	void createCommunication(Client* srcClient, QString userName);
+
 
 	/**
 	* @brief start Method starts infinite loop

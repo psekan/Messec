@@ -9,14 +9,15 @@
 #include <string>
 #include <functional>
 #include "../common/connectionErrors.h"
+#include <QObject>
+#include <QThread>
+#include <QTcpSocket>
 
 class ClientManager;
 
-class Messenger {
-    //Callbacks
-    std::function<void(Messenger&, ConnectionErrors)> m_connectionLostCallback;
-    std::function<void(Messenger&)> m_communicationEndedCallback;
-    std::function<void(Messenger&,unsigned char,unsigned long long,unsigned char*)> m_newMessageCallback;
+class Messenger : public QThread {
+
+	Q_OBJECT
 
     //Boolean values
     bool m_isAlive;
@@ -55,21 +56,13 @@ public:
 
 	Messenger(){}
 
+	Messenger(qintptr socketDescriptor, QString name, QObject *parent = 0);
+
 	/**
 	* Constructor for ClientManager.
 	* @param std::string user name of other client
 	*/
 	Messenger(std::string userName, unsigned int socket, unsigned char aesKey[32], unsigned char aesIv[32], unsigned int inCounter, unsigned int outCounter);
-
-    /**
-     * Set messenger's callbacks. First argument in all callbacks is reference to messenger, which execute callback.
-     * @param connectionLostCallback           Connection with other client was lost. Messenger will be no longer alive.
-     * @param communicationEndedCallback       Other user call exitCommunication function. Messenger will be no longer alive.
-     * @param newMessageCallback               New message was received from other user.
-     */
-    void setCallbacks(std::function<void(Messenger&, ConnectionErrors)> connectionLostCallback,
-                      std::function<void(Messenger&)> communicationEndedCallback,
-                      std::function<void(Messenger&,unsigned char,unsigned long long,unsigned char*)> newMessageCallback);
 
     /**
      * Check if connection between clients is alive.

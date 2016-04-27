@@ -12,17 +12,15 @@ void Messenger::setAes(unsigned char aesKey[32], unsigned char aesIv[32]) {
 	memcpy(this->m_aesIv, aesIv, sizeof(unsigned char) * 32);
 }
 
-Messenger::Messenger(std::string userName, unsigned int socket, unsigned char aesKey[32], unsigned char aesIv[32], uint32_t inCounter,
-	uint32_t outCounter)
+Messenger::Messenger(std::string userName, unsigned int socket, unsigned char aesKey[32], unsigned char aesIv[32], uint32_t inCounter, uint32_t outCounter)
 	: m_userName(userName), m_socket(socket), m_inCounter(inCounter), m_outCounter(outCounter) {
 	this->setAes(aesKey, aesIv);
 	m_isAlive = true;
 }
 
-void Messenger::setCallbacks(std::function<void(Messenger&, ConnectionErrors)> connectionLostCallback, std::function<void(Messenger&)> communicationEndedCallback, std::function<void(Messenger&, unsigned char, unsigned long long, unsigned char*)> newMessageCallback) {
-	this->m_communicationEndedCallback = communicationEndedCallback;
-	this->m_connectionLostCallback = connectionLostCallback;
-	this->m_newMessageCallback = newMessageCallback;
+Messenger::Messenger(qintptr socketDescriptor, QString name, QObject *parent) : QThread(parent) {
+	
+
 }
 
 bool Messenger::isAlive() const {
