@@ -314,7 +314,7 @@ TEST_CASE("Encryption_Decryption") {
 		CHECK(!Messenger::decrypt(cryptotext, 64, plaintext2, iv, 12, tag, key));
 	}
 }
-
+/*
 TEST_CASE("Send/Receive message") {
 	SECTION("send and receive") {
 		unsigned char key[32] = { 0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
@@ -398,7 +398,7 @@ TEST_CASE("Send/Receive message") {
 	}
 
 }
-
+*/
 TEST_CASE("Database") {
 	CHECK_NOTHROW(Database database("database7.db"));
 	Database database("database7.db");

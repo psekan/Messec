@@ -6,6 +6,10 @@
 #include <mbedtls/gcm.h>
 #include <string.h>
 #include <limits.h>
+#include <iostream>
+#include <QDataStream>
+#include "messageTypes.h"
+#include <QHostAddress>
 
 void Messenger::setAes(unsigned char aesKey[32], unsigned char aesIv[32]) {
 	memcpy(this->m_aesKey, aesKey, sizeof(unsigned char) * 32);
@@ -18,9 +22,32 @@ Messenger::Messenger(std::string userName, unsigned int socket, unsigned char ae
 	m_isAlive = true;
 }
 
-Messenger::Messenger(qintptr socketDescriptor, QString name, QObject *parent) : QThread(parent) {
-	
+Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : QThread(parent), m_isAlive(true) {
+	socket = new QTcpSocket(this);
+	QHostAddress addr(ip);
+	socket->connectToHost(addr, port);
+	if (!socket->waitForConnected()) {
+		std::cerr << "Could not connect to |" << ip.toStdString() << "|, " << addr.toString().toStdString() << " on port |" << port << "|" << std::endl;
+		std::cout << "Connect failed" << std::endl;
+		delete socket;
+	}
+}
+Messenger::Messenger(quintptr socketDescriptor, QObject *parent) : QThread(parent), m_isAlive(true) {
+	socket = new QTcpSocket(this);
+	socket->setSocketDescriptor(socketDescriptor);
+}
 
+void Messenger::run() {
+	//socket = new QTcpSocket(NULL);
+	//socket->setSocketDescriptor(sock_ptr);
+	connect(this, SIGNAL(finished()), this, SLOT(deleteLater()), Qt::DirectConnection);
+	//connect(parent(), SIGNAL(finished()), this, SLOT(quit()), Qt::DirectConnection);
+	connect(socket, SIGNAL(readyRead()), this, SLOT(readData()), Qt::DirectConnection);
+	connect(socket, SIGNAL(disconnected()), this, SLOT(quit()), Qt::DirectConnection);
+	connect(parent(), SIGNAL(sendSignal(QString)), this, SLOT(sendNotCrypted(QString)));
+	const QHostAddress &connected = socket->peerAddress();
+	qDebug() << connected.toString();
+	exec();
 }
 
 bool Messenger::isAlive() const {
@@ -137,4 +164,33 @@ void Messenger::addToBuffer(unsigned char*& buffer, const unsigned char* data, s
 {
 	memcpy(buffer, data, dataLength);
 	buffer += dataLength;
+}
+
+void Messenger::readData() {
+	std::cout << "Reading data" << std::endl;
+	QDataStream input(socket);
+	quint8 messageType;
+	QString msg;
+	//TODO decrypt
+	input >> messageType;
+
+	switch (messageType) {
+	case MESSAGETYPE_MESSAGE:
+		input >> msg;
+		std::cout << msg.toStdString() << std::endl;
+		break;
+	default:
+		std::cout << "Unknown message type" << std::endl;
+		break;
+	}
+
+}
+void Messenger::sendNotCrypted(QString msg) {
+	QByteArray arr;
+	QDataStream str(&arr, QIODevice::WriteOnly);
+	quint8 messageType = MESSAGETYPE_MESSAGE;
+	str << messageType;
+	str << msg;
+	socket->write(arr);
+	socket->waitForBytesWritten();
 }

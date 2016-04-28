@@ -9,6 +9,7 @@
 #include <iostream>
 #include <QThread>
 #include <clientManager.h>
+#include <string>
 #define  COMMAND_COUNT 10
 
 using namespace std;
@@ -153,7 +154,12 @@ public:
 					std::cout << "you are not logged in" << std::endl;
 					break;
 				}
-				/////////////// TODO
+				std::cout << "Message: " << std::endl;
+				string msg;
+				//getline(std::cin, msg);
+				std::cin >> msg;
+				clientMngr.sendToMessenger(QString::fromStdString(msg));
+
 				break;
 			}
 			case HELP: {

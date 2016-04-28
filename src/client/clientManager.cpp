@@ -188,11 +188,14 @@ std::vector<Messenger*> ClientManager::getMessengers() const {
 }
 
 Messenger* ClientManager::newMessenger(qintptr socketDescriptor, QString userName) {
-	Messenger* mes = new Messenger(socketDescriptor, userName, this);
+	/*Messenger* mes = new Messenger(socketDescriptor, userName, this);
+	m_peerSocket = new QTcpSocket(this);
+	m_peerSocket->setSocketDescriptor(socketDescriptor);
 	mes->start();
 	//QMutexLocker locker(&mutex);
 	m_messengers.push_back(mes);
-	return mes;
+	return mes;*/
+	return nullptr;
 }
 
 void ClientManager::deleteMessenger() {
@@ -229,17 +232,19 @@ bool ClientManager::startCommunicationWith(QString userName) {
 		QString ip;
 		quint16 port;
 		response >> port >> ip;
-		QTcpSocket* socket = new QTcpSocket(this);
+		/*QTcpSocket* m_peerSocket = new QTcpSocket(this);
 		QHostAddress addr(ip);
-		socket->connectToHost(addr, port);
-		if (!socket->waitForConnected()) {
+		m_peerSocket->connectToHost(addr, port);
+		if (!m_peerSocket->waitForConnected()) {
 			std::cerr << "Could not connect to |" << ip.toStdString() << "|, " << addr.toString().toStdString() << " on port |" << port << "|" << std::endl;
 			std::cout << "Connect failed" << std::endl;
 			return false;
-		}
-		Messenger* msngr = newMessenger(socket->socketDescriptor(), userName);
+		}*/
+		Messenger* msngr = new Messenger(ip, port, userName, this);
+		msngr->start();
 		connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
-		std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
+		m_messengers.push_back(msngr);
+		std::cout << "Connection with " << /*userName.toStdString() <<*/ " is ready" << std::endl;
 		return true;
 	}
 	else if (messageType == MESSAGETYPE_PARTNER_NOT_READY)
@@ -247,4 +252,25 @@ bool ClientManager::startCommunicationWith(QString userName) {
 	else 		
 		std::cout << "Incoming unknown messagetype: " << messageType << std::endl;
 	return false;
+}
+
+
+void ClientManager::incomingConnection(qintptr socketDescriptor)
+{
+	std::cout << "Incoming connection " << std::endl;///////////////////////debug print
+	Messenger* mes = new Messenger(socketDescriptor, this);
+	mes->start();
+	m_messengers.push_back(mes);
+	connect(mes, SIGNAL(finished()), this, SLOT(deleteMessenger()));
+}
+
+void ClientManager::sendToMessenger(QString msg) {
+	emit sendSignal(msg);
+	/*QByteArray arr;
+	QDataStream str(&arr, QIODevice::WriteOnly);
+	quint8 messageType = MESSAGETYPE_MESSAGE;
+	str << messageType;
+	str << msg;
+	m_peerSocket->write(arr);
+	m_peerSocket->waitForBytesWritten();*/
 }

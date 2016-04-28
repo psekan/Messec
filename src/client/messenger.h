@@ -29,6 +29,8 @@ class Messenger : public QThread {
 	unsigned char m_aesIv[32];
 	uint32_t m_inCounter;
 	uint32_t m_outCounter;
+	qintptr sock_ptr;
+	QTcpSocket *socket;
 	
     //Access for ClientManager
     friend class ClientManager;
@@ -56,7 +58,11 @@ public:
 
 	Messenger(){}
 
-	Messenger(qintptr socketDescriptor, QString name, QObject *parent = 0);
+	void run() override;
+
+	Messenger(QString ip, quint16 port, QString name, QObject *parent);
+
+	Messenger(quintptr SocketDescriptor, QObject *parent);
 
 	/**
 	* Constructor for ClientManager.
@@ -75,6 +81,7 @@ public:
      * This messenger will be not usable after call this function.
      */
     void exitCommunication();
+
 
     /**
      * Send message to other client with some message type.
@@ -128,6 +135,11 @@ public:
 	 * @param const unsigned char* key for decryption
 	 */
 	static bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, const unsigned char* tag, const unsigned char* key);
+
+public slots:
+	void readData();
+	void sendNotCrypted(QString msg);
+
 };
 
 

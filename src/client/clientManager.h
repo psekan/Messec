@@ -26,6 +26,8 @@ class ClientManager : public QTcpServer {
 
 	//Connection with server
 	QTcpSocket* m_serverSocket;
+	QTcpSocket* m_peerSocket; ///////////////////////////////socket with other user
+
 	mbedtls_rsa_context m_serverKey;
 	unsigned char m_aesKey[32];
 
@@ -94,6 +96,7 @@ public:
 	 */
 	bool startCommunicationWith(QString userName);
 
+
 	/**
 	* Connect client to server.
 	* @param std::string IPv4 of server
@@ -137,8 +140,17 @@ public:
 	*/
 	bool logIn(QString userName, QString password);
 
+	void sendToMessenger(QString msg);
+
+protected:
+
+	void incomingConnection(qintptr handle) override;
+	
 public slots:
 	void deleteMessenger();
+
+signals:
+	void sendSignal(QString msg);
 
 };
 #endif //MESSEC_CLIENTMANAGER_H
