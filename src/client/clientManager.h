@@ -39,9 +39,10 @@ class ClientManager : public QTcpServer {
 	std::vector<std::string> m_onlineUsers;
 
 public:
+	bool handleKeyDistribution();
 	/**
-	* construcor
-	*/
+		* construcor
+		*/
 	ClientManager();
 
 	/**

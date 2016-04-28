@@ -14,6 +14,9 @@
 #include <mbedtls/rsa.h>
 #include "client.h"
 #include "database.h"
+#include <mbedtls/pk.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
 
 class ServerManager : public QTcpServer
 {
@@ -21,7 +24,7 @@ class ServerManager : public QTcpServer
 	qint16 port;
 	
     unsigned int m_socket;
-    mbedtls_rsa_context m_rsaKey;
+    mbedtls_pk_context m_rsaKey;
     std::vector<Client*> m_clients;
 	Database m_database;
 	mutable QMutex mutex;
@@ -65,7 +68,7 @@ public:
 	* @param Client&
 	*/
 	void createCommunication(Client* srcClient, QString userName);
-
+	mbedtls_pk_context getRSAKey() const;
 
 	/**
 	* @brief start Method starts infinite loop
@@ -157,6 +160,11 @@ public slots:
 	void clientLogOut(Client* client);
 
 	void getOnlineUsers(Client* client);
+
+	int generateRSAKey();
 };
+
+int generateRandomNumber(unsigned char* output, int output_len);
+void initRandomContexts(mbedtls_entropy_context& entropy, mbedtls_ctr_drbg_context& ctr_drbg);
 
 #endif //MESSEC_SERVERMANAGER_H

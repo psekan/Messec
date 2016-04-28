@@ -50,6 +50,8 @@ public:
      */
 	explicit Client(qintptr socket, QObject *parent = 0);
 
+	void sendRSA();
+	void setAES();
 	void run() override;
 
     /**

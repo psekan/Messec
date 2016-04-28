@@ -8,6 +8,100 @@
 #include <iostream>
 #include <QDataStream>
 #include <messageTypes.h>
+#include <mbedtls/entropy_poll.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/pk.h>
+
+void initRandomContexts(mbedtls_entropy_context& entropy, mbedtls_ctr_drbg_context& ctr_drbg)
+{
+	mbedtls_entropy_init(&entropy);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+	mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 64, MBEDTLS_ENTROPY_SOURCE_STRONG);
+	mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 16, MBEDTLS_ENTROPY_SOURCE_WEAK);
+}
+
+int generateRandomNumber(unsigned char* output, int output_len)
+{
+	int result = 0;
+	mbedtls_entropy_context entropy;
+	mbedtls_ctr_drbg_context ctr_drbg;
+	const char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed_generacia_nahodneho cisla";
+	initRandomContexts(entropy, ctr_drbg);
+
+	result += mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
+
+	result += mbedtls_ctr_drbg_random(&ctr_drbg, output, output_len);
+
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
+
+	return result;
+}
+
+bool ClientManager::handleKeyDistribution()
+{
+	mbedtls_pk_context rsa_key;
+	mbedtls_pk_init(&rsa_key);
+	unsigned char buffer[32000];
+	unsigned char output[512];
+	size_t length;
+	int result = 0;
+	QDataStream u(m_serverSocket);
+
+	std::cout << "waiting for rsa key" << std::endl;
+	m_serverSocket->waitForReadyRead();
+	u.readRawData(reinterpret_cast<char*>(buffer), 32000);
+
+	result += mbedtls_pk_parse_public_key(&rsa_key, buffer, 4096);
+	if (result != 0)
+	{
+		std::cout << "parsing failed";
+		return false;
+	}
+	generateRandomNumber(m_aesKey, 32);
+
+	mbedtls_rsa_context *rsa = mbedtls_pk_rsa(rsa_key);
+	mbedtls_mpi_write_file("N:  ", &rsa->N, 16, stdout);
+
+	mbedtls_entropy_context entropy;
+	mbedtls_ctr_drbg_context ctr_drbg;
+	const char *personalization = "sifrovanie_za_pomoci_RSA";
+	initRandomContexts(entropy, ctr_drbg);
+	result += mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
+
+	result += mbedtls_pk_encrypt(&rsa_key, m_aesKey, 32, output, &length, 512, mbedtls_ctr_drbg_random, &ctr_drbg);
+
+	if (result != 0)
+	{
+		std::cout << "encrypt by rsa failed";
+		return false;
+	}
+
+	QByteArray arr;
+	QDataStream str(&arr, QIODevice::WriteOnly);
+	str << length;
+	m_serverSocket->write(arr);
+	std::cout << "sending aes key: ";
+	std::cout.write(reinterpret_cast<char*>(m_aesKey), 32);
+	std::cout << std::endl;
+	m_serverSocket->write(reinterpret_cast<char*>(output), length);
+	m_serverSocket->waitForBytesWritten();
+
+	mbedtls_pk_free(&rsa_key);
+	mbedtls_entropy_free(&entropy);
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	// add check
+	if (result != 0)
+	{
+		std::cout << "keys wasnt distributed correctly" << std::endl;
+		return false;
+	}
+
+	return true;
+}
 
 ClientManager::ClientManager(): m_isLoggedIn(false), m_isConnected (false), m_serverSocket (nullptr), QTcpServer(0) {}
 
@@ -40,16 +134,22 @@ bool ClientManager::signalconnect(QString ip, int port) {
 		std::cout << "Connect failed" << std::endl;
 		return false;
 	}
-	QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
-	quint8 messageType = MESSAGETYPE_SEND_PORT;
-	str << messageType;
-	str << getPort();
-	m_serverSocket->write(arr);
-	m_serverSocket->waitForBytesWritten();
-	m_isConnected = true;
-	std::cout << "Successfully connected" << std::endl;
-	return true;
+
+    if (handleKeyDistribution()) {
+    	QByteArray arr;
+		QDataStream str(&arr, QIODevice::WriteOnly);
+		quint8 messageType = MESSAGETYPE_SEND_PORT;
+		str << messageType;
+		str << getPort();
+		m_serverSocket->write(arr);
+		m_serverSocket->waitForBytesWritten();
+		m_isConnected = true;
+		m_isConnected = true;
+		std::cout << "Successfully connected" << std::endl;
+		return true;
+	}
+
+	return false;
 }
 
 bool ClientManager::isConnected() const {
