@@ -79,7 +79,7 @@ bool ClientManager::handleKeyDistribution()
 	return true;
 }
 
-ClientManager::ClientManager(): m_isLoggedIn(false), m_isConnected (false), m_serverSocket (nullptr), QTcpServer(0) {}
+ClientManager::ClientManager(): m_isLoggedIn(false), m_isConnected (false), m_serverSocket (nullptr), QTcpServer(0), m_inCounter(0), m_outCounter(0) {}
 
 ClientManager::~ClientManager() {
 	disconnect();
@@ -155,10 +155,8 @@ bool ClientManager::signIn(QString userName, QString password) {
 	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
-	QDataStream u(m_serverSocket);
 	QString message;
-	u >> messageType;
-	u >> message;
+	parseMessage(m_serverSocket, &messageType, &message);
 	
 	std::cout << "sign in ";	
 	if(messageType == MESSAGETYPE_SIGNIN_SUCCESS)
@@ -190,10 +188,8 @@ bool ClientManager::logIn(QString userName, QString password) {
 	std::cout << "waiting for response" << std::endl; //////////////////////////debug print
 	m_serverSocket->waitForReadyRead();
 
-	QDataStream u(m_serverSocket);
 	QString message;
-	u >> messageType;
-	u >> message;
+	parseMessage(m_serverSocket, &messageType, &message);
 	
 	std::cout << "log in ";
 	
@@ -237,10 +233,8 @@ void ClientManager::getOnlineUsers() {
 	m_serverSocket->waitForBytesWritten();
 	m_serverSocket->waitForReadyRead();
 
-	QDataStream u(m_serverSocket);
 	QString message;
-	u >> messageType;
-	u >> message;
+	parseMessage(m_serverSocket, &messageType, &message);
 
 	if (messageType != MESSAGETYPE_GET_ONLINE_USERS)
 	{
@@ -257,6 +251,30 @@ void ClientManager::getOnlineUsers() {
 		}
 		std::cout << "---------" << std::endl;
 	}
+}
+
+void ClientManager::parseMessage(QTcpSocket* socket, quint8* message_type, QString* message)
+{
+	QDataStream u(socket);
+	unsigned char tag[16];
+	size_t messageLengt;
+	u >> messageLengt;
+	unsigned char *uMessage = new unsigned char[messageLengt];
+	u.readRawData(reinterpret_cast<char*>(tag), 16);
+
+	
+	u.readRawData(reinterpret_cast<char*>(uMessage), messageLengt);
+	
+	const unsigned char* pMessage = decryptMessage(message_type, &m_inCounter, uMessage, messageLengt, nullptr, tag, m_aesKey);
+	if(pMessage == nullptr)
+	{
+		std::cout << "decryption fail" << std::endl;
+		delete[] uMessage;
+		return;
+	}
+
+	*message = QString(reinterpret_cast<const char *>(pMessage));
+	delete[] uMessage;
 }
 
 std::vector<Messenger*> ClientManager::getMessengers() const {

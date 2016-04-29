@@ -14,7 +14,7 @@
 #include <mbedtls/entropy.h>
 #include <crypto.h>
 
-Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false), readyToCommuinicate(true) {
+Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false), readyToCommuinicate(true), m_inCounter(0), m_outCounter(0) {
 	
 }
 
@@ -116,12 +116,13 @@ bool Client::sendMessage(quint8 messageType, QString message) {
 	QByteArray array;
 	QDataStream output(&array, QIODevice::WriteOnly);
 
-	/*size_t length;
+	size_t length;
 	unsigned char tag[16];
 	const unsigned char* uMessage = encryptMessage(messageType, &m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), &length, tag, m_aesKey);
 	
 	if(uMessage == nullptr)
 	{
+		std::cout << "encryption failed" << std::endl;
 		return false;
 	}
 
@@ -129,10 +130,9 @@ bool Client::sendMessage(quint8 messageType, QString message) {
 	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
 	output.writeRawData(reinterpret_cast<const char*>(uMessage), length);
 	socket->write(array);
-	delete[] uMessage;*/
+	socket->waitForBytesWritten();
+	delete[] uMessage;
 
-	output << messageType;
-	output << message;
 	return true; 
 }
 

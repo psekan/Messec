@@ -124,14 +124,14 @@ public:
 	* @return std::vector<std::string> container of users names
 	*/
 	void getOnlineUsers();
-
+	void parseMessage(QTcpSocket* socket, quint8* message_type, QString* message);
 
 	/**
-	* Sign in new user.
-	* @param std::string user name
-	* @param std::string password of user
-	* @return bool true if new user is successfully signed in
-	*/
+		* Sign in new user.
+		* @param std::string user name
+		* @param std::string password of user
+		* @return bool true if new user is successfully signed in
+		*/
 	bool signIn(QString userName, QString password);
 
 	/**
