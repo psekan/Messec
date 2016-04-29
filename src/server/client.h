@@ -29,6 +29,8 @@ class Client : public QThread
     //Connection with client
     std::string m_userName;
     unsigned char m_aesKey[32]; //TODO
+	uint32_t m_inCounter;
+	uint32_t m_outCounter;
 
 	/**
 	 * Set client as logged in with user name

@@ -14,39 +14,13 @@
 #include <cstring>
 #include "mbedtls/pk.h"
 #include "mbedtls/rsa.h"
+#include "crypto.h"
 
 #define NUMBER_OF_ITERATIONS 1000
 #define SALT_LENGTH 32
 #define PBKDF2_LENGTH 64
 
 const int char_conversion = (sizeof(unsigned char) * 2);
-
-void initRandomContexts(mbedtls_entropy_context& entropy, mbedtls_ctr_drbg_context& ctr_drbg)
-{
-	mbedtls_entropy_init(&entropy);
-	mbedtls_ctr_drbg_init(&ctr_drbg);
-	mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 64, MBEDTLS_ENTROPY_SOURCE_STRONG);
-	mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 16, MBEDTLS_ENTROPY_SOURCE_WEAK);
-}
-
-int generateRandomNumber(unsigned char* output, int output_len)
-{
-	int result = 0;
-	mbedtls_entropy_context entropy;
-	mbedtls_ctr_drbg_context ctr_drbg;
-	const char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed_generacia_nahodneho cisla";
-	initRandomContexts(entropy, ctr_drbg);
-
-	result += mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
-
-	result += mbedtls_ctr_drbg_random(&ctr_drbg, output, output_len);
-
-	mbedtls_ctr_drbg_free(&ctr_drbg);
-	mbedtls_entropy_free(&entropy);
-
-	return result;
-}
 
 int pbkdf2(unsigned char const* password, int password_len, unsigned char* salt, int salt_len, int number_of_it,
 	unsigned char* pbkdf2_output, int output_len)
@@ -87,12 +61,15 @@ void stringToUCHar(std::string &input, unsigned char* output)
 
 /*Constructor*/
 ServerManager::ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent) : QTcpServer(parent), port(port), m_database(dbFilePath) {
-	//TODO init rsa
+	if (generateRSAKey()) {
+		std::cout << "Something went wrong with generating RSA key" << std::endl;
+		exit(0);
+	}
 }
 
 ServerManager::~ServerManager()
 {
-
+	mbedtls_pk_free(&m_rsaKey);
 }
 
 int ServerManager::generateRSAKey()
@@ -123,10 +100,7 @@ void ServerManager::start()
 {
 	qDebug() << "Server start on " << port;
 	qDebug() << "Server start on " << port;
-	if (generateRSAKey()) {
-		std::cout << "Something went wrong with generating RSA key" << std::endl;
-		exit(0);
-	}
+	
 	if (!this->listen(QHostAddress::Any, port)) {
 		qDebug() << "Server start failed";
 		qDebug() << this->errorString();

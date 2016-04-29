@@ -164,7 +164,4 @@ public slots:
 	int generateRSAKey();
 };
 
-int generateRandomNumber(unsigned char* output, int output_len);
-void initRandomContexts(mbedtls_entropy_context& entropy, mbedtls_ctr_drbg_context& ctr_drbg);
-
 #endif //MESSEC_SERVERMANAGER_H

@@ -12,33 +12,7 @@
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/pk.h>
-
-void initRandomContexts(mbedtls_entropy_context& entropy, mbedtls_ctr_drbg_context& ctr_drbg)
-{
-	mbedtls_entropy_init(&entropy);
-	mbedtls_ctr_drbg_init(&ctr_drbg);
-	mbedtls_entropy_add_source(&entropy, mbedtls_platform_entropy_poll, nullptr, 64, MBEDTLS_ENTROPY_SOURCE_STRONG);
-	mbedtls_entropy_add_source(&entropy, mbedtls_hardclock_poll, nullptr, 16, MBEDTLS_ENTROPY_SOURCE_WEAK);
-}
-
-int generateRandomNumber(unsigned char* output, int output_len)
-{
-	int result = 0;
-	mbedtls_entropy_context entropy;
-	mbedtls_ctr_drbg_context ctr_drbg;
-	const char *personalization = "nahodne_slova_na_zvysenie_entropie_toto_nie_je_seed_generacia_nahodneho cisla";
-	initRandomContexts(entropy, ctr_drbg);
-
-	result += mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
-
-	result += mbedtls_ctr_drbg_random(&ctr_drbg, output, output_len);
-
-	mbedtls_ctr_drbg_free(&ctr_drbg);
-	mbedtls_entropy_free(&entropy);
-
-	return result;
-}
+#include "crypto.h"
 
 bool ClientManager::handleKeyDistribution()
 {
@@ -80,14 +54,16 @@ bool ClientManager::handleKeyDistribution()
 		return false;
 	}
 
-	QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
-	str << length;
-	m_serverSocket->write(arr);
+
 	std::cout << "sending aes key: ";
 	std::cout.write(reinterpret_cast<char*>(m_aesKey), 32);
 	std::cout << std::endl;
-	m_serverSocket->write(reinterpret_cast<char*>(output), length);
+	
+	QByteArray arr;
+	QDataStream str(&arr, QIODevice::WriteOnly);
+	str << length;
+	str.writeRawData(reinterpret_cast<char*>(output), length);
+	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
 
 	mbedtls_pk_free(&rsa_key);

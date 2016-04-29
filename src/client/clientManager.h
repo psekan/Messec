@@ -30,6 +30,8 @@ class ClientManager : public QTcpServer {
 
 	mbedtls_rsa_context m_serverKey;
 	unsigned char m_aesKey[32];
+	uint32_t m_inCounter;
+	uint32_t m_outCounter;
 
 	//Connections with other clients
 	quint16 clientPort;

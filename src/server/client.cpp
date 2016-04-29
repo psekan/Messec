@@ -12,6 +12,7 @@
 #include "serverManager.h"
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
+#include <crypto.h>
 
 Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false), readyToCommuinicate(true) {
 	
@@ -115,12 +116,24 @@ bool Client::sendMessage(quint8 messageType, QString message) {
 	QByteArray array;
 	QDataStream output(&array, QIODevice::WriteOnly);
 
-	//TODO encrypt
+	/*size_t length;
+	unsigned char tag[16];
+	const unsigned char* uMessage = encryptMessage(messageType, &m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), &length, tag, m_aesKey);
+	
+	if(uMessage == nullptr)
+	{
+		return false;
+	}
+
+	output << length;
+	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
+	output.writeRawData(reinterpret_cast<const char*>(uMessage), length);
+	socket->write(array);
+	delete[] uMessage;*/
+
 	output << messageType;
 	output << message;
-
-	socket->write(array);
-	return true;
+	return true; 
 }
 
 void Client::logInUser(std::string userName) {
