@@ -309,9 +309,9 @@ void ServerManager::getOnlineUsers(Client* client) {
 		{
 			if (!first) {
 				message += "|#|";
+				first = false;
 			}
 			message += QString::fromStdString((*it)->m_userName);			
-			first = false;
 		}
 	}
 	locker.unlock();

@@ -28,6 +28,8 @@ bool ClientManager::handleKeyDistribution()
 	m_serverSocket->waitForReadyRead();
 	u.readRawData(reinterpret_cast<char*>(buffer), 32000);
 
+	std::cout.write(reinterpret_cast<char*>(buffer), 300);
+
 	result += mbedtls_pk_parse_public_key(&rsa_key, buffer, 4096);
 	if (result != 0)
 	{
@@ -37,7 +39,7 @@ bool ClientManager::handleKeyDistribution()
 	generateRandomNumber(m_aesKey, 32);
 
 	mbedtls_rsa_context *rsa = mbedtls_pk_rsa(rsa_key);
-	mbedtls_mpi_write_file("N:  ", &rsa->N, 16, stdout);
+	//mbedtls_mpi_write_file("N:  ", &rsa->N, 16, stdout);
 
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
@@ -192,7 +194,8 @@ bool ClientManager::logIn(QString userName, QString password) {
 	parseMessage(m_serverSocket, &messageType, &message);
 	
 	std::cout << "log in ";
-	
+	std::cout << message.toStdString() << std::endl;
+
 	if (messageType == MESSAGETYPE_LOGIN_SUCCESS)
 	{
 		std::cout << "successful" << std::endl;
@@ -264,9 +267,10 @@ void ClientManager::parseMessage(QTcpSocket* socket, quint8* message_type, QStri
 
 	
 	u.readRawData(reinterpret_cast<char*>(uMessage), messageLengt);
-	
+	size_t decryptedLength;
+
 	const unsigned char* pMessage = decryptMessage(message_type, &m_inCounter, uMessage, messageLengt, nullptr, tag, m_aesKey);
-	if(pMessage == nullptr)
+	if (pMessage == nullptr)
 	{
 		std::cout << "decryption fail" << std::endl;
 		delete[] uMessage;

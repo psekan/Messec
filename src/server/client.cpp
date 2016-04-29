@@ -32,8 +32,10 @@ void Client::sendRSA()
 		return;
 	}
 
+	std::cout << "sending RSA" << std::endl;
 	socket->write(reinterpret_cast<char*>(output_buf));
 	socket->waitForBytesWritten();
+	std::cout << "RSA sent" << std::endl;
 }
 
 void Client::setAES()
@@ -66,20 +68,18 @@ void Client::setAES()
 		std::cout << "rsa decryption failed, length of input is: " << length << " result is: "<< result << std::endl;
 		//return;
 	}
-
+	std::cout << "g";
 	memcpy(m_aesKey, output, 32);
 
 	if (result != 0)
 	{
 		std::cout << "keys wasnt distributed correctly" << std::endl;
-		return;
+		//return;
 	}
-
 	std::cout << "recieved aes key: ";
 	std::cout.write(reinterpret_cast<char*>(m_aesKey), 32);
 	std::cout << std::endl;
-	
-	mbedtls_pk_free(&rsaKey);
+
 	mbedtls_entropy_free(&entropy);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
 
