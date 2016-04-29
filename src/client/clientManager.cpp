@@ -276,8 +276,9 @@ void ClientManager::parseMessage(QTcpSocket* socket, quint8* message_type, QStri
 		delete[] uMessage;
 		return;
 	}
-
-	*message = QString(reinterpret_cast<const char *>(pMessage));
+	//uMessage[messageLengt] = '\0';
+	std::string messageString = std::string(reinterpret_cast<const char *>(pMessage), messageLengt - sizeof(quint8));
+	*message = QString::fromStdString(messageString);
 	delete[] uMessage;
 }
 
