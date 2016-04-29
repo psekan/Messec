@@ -337,6 +337,8 @@ bool ClientManager::startCommunicationWith(QString userName) {
 		Messenger* msngr = new Messenger(ip, port, userName, this);
 		msngr->start();
 		connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
+		connect(this, SIGNAL(sendSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
+		connect(this, SIGNAL(finished()), msngr, SLOT(quit()), Qt::DirectConnection);
 		m_messengers.push_back(msngr);
 		std::cout << "Connection with " << /*userName.toStdString() <<*/ " is ready" << std::endl;
 		return true;
@@ -354,8 +356,10 @@ void ClientManager::incomingConnection(qintptr socketDescriptor)
 	std::cout << "Incoming connection " << std::endl;///////////////////////debug print
 	Messenger* mes = new Messenger(socketDescriptor, this);
 	mes->start();
-	m_messengers.push_back(mes);
 	connect(mes, SIGNAL(finished()), this, SLOT(deleteMessenger()));
+	connect(this, SIGNAL(sendSignal(QString)), mes, SLOT(sendNotCrypted(QString)));
+	connect(this, SIGNAL(finished()), mes, SLOT(quit()), Qt::DirectConnection);
+	m_messengers.push_back(mes);
 }
 
 void ClientManager::sendToMessenger(QString msg) {

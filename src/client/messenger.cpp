@@ -31,22 +31,25 @@ Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : 
 		std::cout << "Connect failed" << std::endl;
 		delete socket;
 	}
+	std::cout << "Connection to " << name.toStdString() << "successful" << std::endl;
 }
+
 Messenger::Messenger(quintptr socketDescriptor, QObject *parent) : QThread(parent), m_isAlive(true) {
 	socket = new QTcpSocket(this);
-	socket->setSocketDescriptor(socketDescriptor);
+	if (socket->setSocketDescriptor(socketDescriptor))
+		std::cout << "Setting socket successful" << std::endl;
+	else
+		std::cout << "Setting socket failed" << std::endl;
 }
 
 void Messenger::run() {
 	//socket = new QTcpSocket(NULL);
 	//socket->setSocketDescriptor(sock_ptr);
 	connect(this, SIGNAL(finished()), this, SLOT(deleteLater()), Qt::DirectConnection);
-	//connect(parent(), SIGNAL(finished()), this, SLOT(quit()), Qt::DirectConnection);
 	connect(socket, SIGNAL(readyRead()), this, SLOT(readData()), Qt::DirectConnection);
 	connect(socket, SIGNAL(disconnected()), this, SLOT(quit()), Qt::DirectConnection);
-	connect(parent(), SIGNAL(sendSignal(QString)), this, SLOT(sendNotCrypted(QString)));
-	const QHostAddress &connected = socket->peerAddress();
-	qDebug() << connected.toString();
+	//const QHostAddress &connected = socket->peerAddress();
+	//qDebug() << connected.toString();
 	exec();
 }
 

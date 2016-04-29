@@ -61,6 +61,7 @@ void stringToUCHar(std::string &input, unsigned char* output)
 
 /*Constructor*/
 ServerManager::ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent) : QTcpServer(parent), port(port), m_database(dbFilePath) {
+	std::cout << "Generating RSA key" << std::endl;
 	if (generateRSAKey()) {
 		std::cout << "Something went wrong with generating RSA key" << std::endl;
 		exit(0);
@@ -98,7 +99,6 @@ int ServerManager::generateRSAKey()
 /*Network*/
 void ServerManager::start()
 {
-	qDebug() << "Server start on " << port;
 	qDebug() << "Server start on " << port;
 	
 	if (!this->listen(QHostAddress::Any, port)) {
