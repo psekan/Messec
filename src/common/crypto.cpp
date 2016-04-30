@@ -67,7 +67,7 @@ const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const
 
 	if(encrypt(preparedMessageBuffer, *outputLength, encryptedMessage, IV, 16, tag, key))
 	{
-		/*std::cout << "sending lenght: " << *outputLength << " counter: " << counter << " sending tag: ";
+		/*std::cout << "sending lenght: " << *outputLength << " counter: " << *counter << " sending tag: ";
 		std::cout.write(reinterpret_cast<char*>(tag), 16) << " sending message: ";
 		std::cout.write(reinterpret_cast<const char*>(encryptedMessage), *outputLength) << std::endl;
 		std::cout << "initialization vector is: ";
@@ -95,11 +95,11 @@ const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, cons
 	mbedtls_sha512(uCounter, 4, output, 0);
 	memcpy(IV, output, 16);
 
-	//std::cout << "recieved lenght: " << inputLength << " counter: " << counter << " recieved tag: ";
-	//std::cout.write(reinterpret_cast<char*>(tag), 16) << " recieved message: ";
-	//std::cout.write(reinterpret_cast<const char*>(input), inputLength) << std::endl;
-	//std::cout << "initialization vector is: ";
-	//std::cout.write(reinterpret_cast<char*>(IV), 16);
+	/*std::cout << "recieved lenght: " << inputLength << " counter: " << *counter << " recieved tag: ";
+	std::cout.write(reinterpret_cast<char*>(tag), 16) << " recieved message: ";
+	std::cout.write(reinterpret_cast<const char*>(input), inputLength) << std::endl;
+	std::cout << "initialization vector is: ";
+	std::cout.write(reinterpret_cast<char*>(IV), 16);*/
 	
 	if(decrypt(input, inputLength, decryptedMessage, IV, 16, tag, key))
 	{

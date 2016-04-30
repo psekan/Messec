@@ -309,9 +309,9 @@ void ServerManager::getOnlineUsers(Client* client) {
 		{
 			if (!first) {
 				message += "|#|";
-				first = false;
 			}
-			message += QString::fromStdString((*it)->m_userName);			
+			message += QString::fromStdString((*it)->m_userName);	
+			first = false;
 		}
 	}
 	locker.unlock();
@@ -345,7 +345,7 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 			QByteArray array;
 			QDataStream output(&array, QIODevice::WriteOnly);
 			output << quint8(MESSAGETYPE_PARTNER_INFO);
-			output << (*it)->clientPort;
+			output << (*it)->m_clientPort;
 			output << (*it)->socket->peerAddress().toString();
 
 			srcClient->socket->write(array);

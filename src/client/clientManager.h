@@ -34,7 +34,7 @@ class ClientManager : public QTcpServer {
 	uint32_t m_outCounter;
 
 	//Connections with other clients
-	quint16 clientPort;
+	quint16 m_clientPort;
 	std::vector<Messenger*> m_messengers;
 
 	//Online users
@@ -62,14 +62,14 @@ public:
 	* clientPort setter, port of server which listens for other clients
 	*/
 	void setPort(quint16 port) {
-		clientPort = port;
+		m_clientPort = port;
 	}
 
 	/**
 	* clientPort getter, port of server which listens for other clients
 	*/
 	quint16 getPort() {
-		return clientPort;
+		return m_clientPort;
 	}
 
 	/**
@@ -124,7 +124,9 @@ public:
 	* @return std::vector<std::string> container of users names
 	*/
 	void getOnlineUsers();
-	void parseMessage(QTcpSocket* socket, quint8* message_type, QString* message);
+	void parseMessage(quint8* message_type, QString* message);
+
+	bool sendMessage(quint8 messageType, QString message);
 
 	/**
 		* Sign in new user.

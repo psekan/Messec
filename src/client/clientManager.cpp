@@ -28,8 +28,6 @@ bool ClientManager::handleKeyDistribution()
 	m_serverSocket->waitForReadyRead();
 	u.readRawData(reinterpret_cast<char*>(buffer), 32000);
 
-	std::cout.write(reinterpret_cast<char*>(buffer), 300);
-
 	result += mbedtls_pk_parse_public_key(&rsa_key, buffer, 4096);
 	if (result != 0)
 	{
@@ -37,9 +35,29 @@ bool ClientManager::handleKeyDistribution()
 		return false;
 	}
 	generateRandomNumber(m_aesKey, 32);
+	unsigned char aesAndPort[34];
+
+	memcpy(aesAndPort, m_aesKey, 32);
+	memcpy(aesAndPort + 32, &m_clientPort, 2);
 
 	mbedtls_rsa_context *rsa = mbedtls_pk_rsa(rsa_key);
-	//mbedtls_mpi_write_file("N:  ", &rsa->N, 16, stdout);
+	std::cout << "Do you trust this key? y/n";
+	mbedtls_mpi_write_file("N:  ", &rsa->N, 16, stdout);
+	mbedtls_mpi_write_file("N:  ", &rsa->E, 16, stdout);
+	bool answered = false;
+
+	while (!answered)
+	{
+		char answer = getchar();
+		switch (answer)
+		{
+		case 'y': answered = true;
+			break;
+		case 'n': return false;
+		default: std::cout << "type 'y' if you do or 'n' if you dont" << std::endl;
+			break;
+		}
+	}
 
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
@@ -48,7 +66,7 @@ bool ClientManager::handleKeyDistribution()
 	result += mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
 		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
 
-	result += mbedtls_pk_encrypt(&rsa_key, m_aesKey, 32, output, &length, 512, mbedtls_ctr_drbg_random, &ctr_drbg);
+	result += mbedtls_pk_encrypt(&rsa_key, aesAndPort, 34, output, &length, 512, mbedtls_ctr_drbg_random, &ctr_drbg);
 
 	if (result != 0)
 	{
@@ -60,7 +78,9 @@ bool ClientManager::handleKeyDistribution()
 	std::cout << "sending aes key: ";
 	std::cout.write(reinterpret_cast<char*>(m_aesKey), 32);
 	std::cout << std::endl;
-	
+
+	std::cout << "sending port: " << m_clientPort << std::endl;
+
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
 	str << length;
@@ -71,7 +91,7 @@ bool ClientManager::handleKeyDistribution()
 	mbedtls_pk_free(&rsa_key);
 	mbedtls_entropy_free(&entropy);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
-	// add check
+
 	if (result != 0)
 	{
 		std::cout << "keys wasnt distributed correctly" << std::endl;
@@ -81,7 +101,7 @@ bool ClientManager::handleKeyDistribution()
 	return true;
 }
 
-ClientManager::ClientManager(): m_isLoggedIn(false), m_isConnected (false), m_serverSocket (nullptr), QTcpServer(0), m_inCounter(0), m_outCounter(0) {}
+ClientManager::ClientManager() : m_isLoggedIn(false), m_isConnected(false), m_serverSocket(nullptr), QTcpServer(0), m_inCounter(0), m_outCounter(0) {}
 
 ClientManager::~ClientManager() {
 	disconnect();
@@ -98,9 +118,9 @@ void ClientManager::start() {
 	else
 	{
 		setPort(serverPort());
-		std::cout << "success on port " << clientPort << std::endl; ////////////////////////debug print
+		std::cout << "success on port " << m_clientPort << std::endl; ////////////////////////debug print
 	}
-	}
+}
 
 
 bool ClientManager::signalconnect(QString ip, int port) {
@@ -113,20 +133,12 @@ bool ClientManager::signalconnect(QString ip, int port) {
 		return false;
 	}
 
-    if (handleKeyDistribution()) {
-    	QByteArray arr;
-		QDataStream str(&arr, QIODevice::WriteOnly);
-		quint8 messageType = MESSAGETYPE_SEND_PORT;
-		str << messageType;
-		str << getPort();
-		m_serverSocket->write(arr);
-		m_serverSocket->waitForBytesWritten();
-		m_isConnected = true;
+	if (handleKeyDistribution()) {
 		m_isConnected = true;
 		std::cout << "Successfully connected" << std::endl;
 		return true;
 	}
-
+	std::cout << "Coudlnt connect" << std::endl;
 	return false;
 }
 
@@ -135,7 +147,7 @@ bool ClientManager::isConnected() const {
 }
 
 void ClientManager::disconnect() {
-	if (m_serverSocket != nullptr) 
+	if (m_serverSocket != nullptr)
 	{
 		m_isConnected = false;
 		m_serverSocket->disconnectFromHost();
@@ -145,56 +157,47 @@ void ClientManager::disconnect() {
 }
 
 bool ClientManager::signIn(QString userName, QString password) {
-	QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_SIGNIN;
-	str << messageType;
-	str << QString::fromStdString(userName.toStdString());
-	str << QString::fromStdString(password.toStdString());
+	QString messageSent = QString::fromStdString(userName.toStdString()) + "|#|" + QString::fromStdString(password.toStdString());
 	std::cout << "seidng data to server" << std::endl;
-	m_serverSocket->write(arr);
-	m_serverSocket->waitForBytesWritten();
+	sendMessage(messageType, messageSent);
 	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
-	QString message;
-	parseMessage(m_serverSocket, &messageType, &message);
-	
-	std::cout << "sign in ";	
-	if(messageType == MESSAGETYPE_SIGNIN_SUCCESS)
+	QString messageRec;
+	parseMessage(&messageType, &messageRec);
+
+	std::cout << "sign in ";
+
+	if (messageType == MESSAGETYPE_SIGNIN_SUCCESS)
 	{
 		std::cout << "successful" << std::endl;
 		return true;
 	}
-	else if(messageType == MESSAGETYPE_SIGNIN_FAIL)
+	else if (messageType == MESSAGETYPE_SIGNIN_FAIL)
 	{
 		std::cout << "failed" << std::endl;
 	}
 	else
 	{
-		std::cout << "failed with incoming unknown message: " << messageType << " " << message.toStdString() << std::endl;
+		std::cout << "failed with incoming unknown message: " << messageType << messageRec.toStdString() << std::endl;
 	}
 	return false;
 }
 
 bool ClientManager::logIn(QString userName, QString password) {
-	QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_LOGIN;
-	str << messageType;
-	str << QString::fromStdString(userName.toStdString());
-	str << QString::fromStdString(password.toStdString());
-	std::cout << "sending data to server" << std::endl; /////////////////////////debug print
-	m_serverSocket->write(arr);
-	m_serverSocket->waitForBytesWritten();
-	std::cout << "waiting for response" << std::endl; //////////////////////////debug print
+	QString messageSent = QString::fromStdString(userName.toStdString()) + "|#|" + QString::fromStdString(password.toStdString());
+	std::cout << "seidng data to server" << std::endl;
+	sendMessage(messageType, messageSent);
+	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
-	QString message;
-	parseMessage(m_serverSocket, &messageType, &message);
-	
+	QString messageRec;
+	parseMessage(&messageType, &messageRec);
+
 	std::cout << "log in ";
-	std::cout << message.toStdString() << std::endl;
+	std::cout << messageRec.toStdString() << std::endl;
 
 	if (messageType == MESSAGETYPE_LOGIN_SUCCESS)
 	{
@@ -202,13 +205,13 @@ bool ClientManager::logIn(QString userName, QString password) {
 		m_isLoggedIn = true;
 		return true;
 	}
-	else if(messageType == MESSAGETYPE_LOGIN_FAIL)
+	else if (messageType == MESSAGETYPE_LOGIN_FAIL)
 	{
 		std::cout << "failed" << std::endl;
 	}
 	else
 	{
-		std::cout << "failed with incoming unknown message: " << messageType << " " << message.toStdString() << std::endl;
+		std::cout << "failed with incoming unknown message: " << messageType << " " << messageRec.toStdString() << std::endl;
 	}
 	return false;
 }
@@ -218,26 +221,24 @@ bool ClientManager::isLoggedIn() const {
 }
 
 void ClientManager::logOut() {
-	QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_LOGOUT;
-	str << messageType;
-	m_serverSocket->write(arr);
-	m_serverSocket->waitForBytesWritten();
+	QString messageSent = "";
+	std::cout << "seidng data to server" << std::endl;
+	sendMessage(messageType, messageSent);
+	std::cout << "waiting for response" << std::endl;
 	m_isLoggedIn = false;
 }
 
 void ClientManager::getOnlineUsers() {
-	QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_GET_ONLINE_USERS;
-	str << messageType;
-	m_serverSocket->write(arr);
-	m_serverSocket->waitForBytesWritten();
+	QString messageSent = "";
+	std::cout << "seidng data to server" << std::endl;
+	sendMessage(messageType, messageSent);
+	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
-	QString message;
-	parseMessage(m_serverSocket, &messageType, &message);
+	QString messageRec;
+	parseMessage(&messageType, &messageRec);
 
 	if (messageType != MESSAGETYPE_GET_ONLINE_USERS)
 	{
@@ -245,7 +246,7 @@ void ClientManager::getOnlineUsers() {
 	}
 	else
 	{
-		QStringList users = message.split("|#|");
+		QStringList users = messageRec.split("|#|");
 		std::cout << "Online users:" << std::endl;
 		std::cout << "---------" << std::endl;
 		for (QString user : users)
@@ -256,16 +257,14 @@ void ClientManager::getOnlineUsers() {
 	}
 }
 
-void ClientManager::parseMessage(QTcpSocket* socket, quint8* message_type, QString* message)
+void ClientManager::parseMessage(quint8* message_type, QString* message)
 {
-	QDataStream u(socket);
+	QDataStream u(m_serverSocket);
 	unsigned char tag[16];
 	size_t messageLengt;
 	u >> messageLengt;
 	unsigned char *uMessage = new unsigned char[messageLengt];
 	u.readRawData(reinterpret_cast<char*>(tag), 16);
-
-	
 	u.readRawData(reinterpret_cast<char*>(uMessage), messageLengt);
 	size_t decryptedLength;
 
@@ -280,6 +279,30 @@ void ClientManager::parseMessage(QTcpSocket* socket, quint8* message_type, QStri
 	std::string messageString = std::string(reinterpret_cast<const char *>(pMessage), messageLengt - sizeof(quint8));
 	*message = QString::fromStdString(messageString);
 	delete[] uMessage;
+}
+
+bool ClientManager::sendMessage(quint8 messageType, QString message) {
+	QByteArray array;
+	QDataStream output(&array, QIODevice::WriteOnly);
+
+	size_t length;
+	unsigned char tag[16];
+	const unsigned char* uMessage = encryptMessage(messageType, &m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), &length, tag, m_aesKey);
+
+	if (uMessage == nullptr)
+	{
+		std::cout << "encryption failed" << std::endl;
+		return false;
+	}
+
+	output << length;
+	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
+	output.writeRawData(reinterpret_cast<const char*>(uMessage), length);
+	m_serverSocket->write(array);
+	m_serverSocket->waitForBytesWritten();
+	delete[] uMessage;
+
+	return true;
 }
 
 std::vector<Messenger*> ClientManager::getMessengers() const {
@@ -350,7 +373,7 @@ bool ClientManager::startCommunicationWith(QString userName) {
 	}
 	else if (messageType == MESSAGETYPE_PARTNER_NOT_READY)
 		std::cout << "User " << userName.toStdString() << " is not ready for communication" << std::endl;
-	else 		
+	else
 		std::cout << "Incoming unknown messagetype: " << messageType << std::endl;
 	return false;
 }

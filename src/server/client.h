@@ -20,7 +20,7 @@ class Client : public QThread
 	Q_OBJECT
 	qintptr sock_ptr;
 	QTcpSocket *socket;
-	quint16 clientPort;
+	quint16 m_clientPort;
 
     //Boolean values
     bool m_isLoggedIn;
@@ -71,14 +71,14 @@ public:
 	* clientPort setter, port of server which listens for other clients
 	*/
 	void setClientPort(quint16 port) {
-		clientPort = port;
+		m_clientPort = port;
 	}
 
 	/**
 	* clientPort getter, port of server which listens for other clients
 	*/
 	quint16 getClientPort() {
-		return clientPort;
+		return m_clientPort;
 	}
 
     /**
@@ -93,8 +93,8 @@ public:
      * @param unsigned char* pointer to message data
      */
     bool sendMessage(quint8 messageType, QString message);
-
-signals:
+	void parseMessage(quint8* message_type, QString* message);
+	signals:
 	
 	/**
 	* Log in client as user

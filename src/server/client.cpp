@@ -15,7 +15,7 @@
 #include <crypto.h>
 
 Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false), readyToCommuinicate(true), m_inCounter(0), m_outCounter(0) {
-	
+
 }
 
 void Client::sendRSA()
@@ -51,7 +51,7 @@ void Client::setAES()
 	unsigned char output[512];
 	ServerManager *server = reinterpret_cast<ServerManager*>(parent());
 	mbedtls_pk_context rsaKey = server->getRSAKey();
-	
+
 	initRandomContexts(entropy, ctr_drbg);
 	result += mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
 		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
@@ -65,11 +65,12 @@ void Client::setAES()
 	result += mbedtls_pk_decrypt(&rsaKey, input, length, output, &length_decrypted, 512, mbedtls_ctr_drbg_random, &ctr_drbg);
 	if (result != 0)
 	{
-		std::cout << "rsa decryption failed, length of input is: " << length << " result is: "<< result << std::endl;
+		std::cout << "rsa decryption failed, length of input is: " << length << " result is: " << result << std::endl;
 		//return;
 	}
 	std::cout << "g";
 	memcpy(m_aesKey, output, 32);
+	memcpy(&m_clientPort, output + 32, 2);
 
 	if (result != 0)
 	{
@@ -79,6 +80,8 @@ void Client::setAES()
 	std::cout << "recieved aes key: ";
 	std::cout.write(reinterpret_cast<char*>(m_aesKey), 32);
 	std::cout << std::endl;
+
+	std::cout << "recieved port: " << m_clientPort << std::endl;
 
 	mbedtls_entropy_free(&entropy);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
@@ -119,8 +122,8 @@ bool Client::sendMessage(quint8 messageType, QString message) {
 	size_t length;
 	unsigned char tag[16];
 	const unsigned char* uMessage = encryptMessage(messageType, &m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), &length, tag, m_aesKey);
-	
-	if(uMessage == nullptr)
+
+	if (uMessage == nullptr)
 	{
 		std::cout << "encryption failed" << std::endl;
 		return false;
@@ -133,7 +136,32 @@ bool Client::sendMessage(quint8 messageType, QString message) {
 	socket->waitForBytesWritten();
 	delete[] uMessage;
 
-	return true; 
+	return true;
+}
+
+void Client::parseMessage(quint8* message_type, QString* message)
+{
+	QDataStream u(socket);
+	unsigned char tag[16];
+	size_t messageLengt;
+	u >> messageLengt;
+	unsigned char *uMessage = new unsigned char[messageLengt];
+	u.readRawData(reinterpret_cast<char*>(tag), 16);
+
+	u.readRawData(reinterpret_cast<char*>(uMessage), messageLengt);
+	size_t decryptedLength;
+
+	const unsigned char* pMessage = decryptMessage(message_type, &m_inCounter, uMessage, messageLengt, nullptr, tag, m_aesKey);
+	if (pMessage == nullptr)
+	{
+		std::cout << "decryption fail" << std::endl;
+		delete[] uMessage;
+		return;
+	}
+	//uMessage[messageLengt] = '\0';
+	std::string messageString = std::string(reinterpret_cast<const char *>(pMessage), messageLengt - sizeof(quint8));
+	*message = QString::fromStdString(messageString);
+	delete[] uMessage;
 }
 
 void Client::logInUser(std::string userName) {
@@ -148,26 +176,26 @@ void Client::logOutUser() {
 void Client::readData()
 {
 	std::cout << "Reading data" << std::endl;
-	QDataStream input(socket);
-
 	ServerManager *server = reinterpret_cast<ServerManager*>(parent());
 
 	quint8 messageType;
-	//TODO decrypt
-	input >> messageType;
+	QString message;
+	parseMessage(&messageType, &message);
+	QStringList list;
+	const unsigned char* uMessage;
 
 	QString userName, userPassword;
 	switch (messageType) {
 	case MESSAGETYPE_LOGIN:
 		std::cout << "login initialized" << std::endl;
-		input >> userName >> userPassword;
-		server->clientLogIn(userName, userPassword, this);
+		list = message.split("|#|");
+		server->clientLogIn(list[0], list[1], this);
 		std::cout << "login end" << std::endl;
 		break;
 	case MESSAGETYPE_SIGNIN:
 		std::cout << "singin initialized" << std::endl;
-		input >> userName >> userPassword;
-		server->clientSignIn(userName, userPassword, this);
+		list = message.split("|#|");
+		server->clientSignIn(list[0], list[1], this);
 		std::cout << "signin end" << std::endl;
 		break;
 	case MESSAGETYPE_LOGOUT:
@@ -180,18 +208,17 @@ void Client::readData()
 		server->getOnlineUsers(this);
 		std::cout << "listing of users end" << std::endl;
 		break;
-	case MESSAGETYPE_SEND_PORT:
-		std::cout << "setting client port" << std::endl;
-		quint16 port;
-		input >> port;
-		setClientPort(port);
-		std::cout << "client port is " << getClientPort() << std::endl;
+	/*case MESSAGETYPE_SEND_PORT:
+		uMessage = reinterpret_cast<const unsigned char*>(message.toStdString().c_str());
+		memcpy(&m_clientPort, uMessage, 2);
+		std::cout << "setting client port: " << message.toStdString() << std::endl;
+		std::cout << "client port is " << m_clientPort << std::endl;
 		std::cout << "setting client port end" << std::endl;
-		break;
+		//std::cout << "2 unsigned chars recieved: ";
+		//std::cout.write(reinterpret_cast<const char*>(uMessage), 2) << std::endl;
+		break;*/
 	case MESSAGETYPE_GET_PARTNER:
-		input >> userName;
-		server->createCommunication(this, userName);
-
+		server->createCommunication(this, message);
 		break;
 	default:
 		std::cout << "Wrong message type" << std::endl;
