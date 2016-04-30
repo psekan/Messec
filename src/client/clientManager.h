@@ -124,9 +124,6 @@ public:
 	* @return std::vector<std::string> container of users names
 	*/
 	void getOnlineUsers();
-	void parseMessage(quint8* message_type, QString* message);
-
-	bool sendMessage(quint8 messageType, QString message);
 
 	/**
 		* Sign in new user.

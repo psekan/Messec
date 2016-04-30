@@ -12,7 +12,7 @@
 #include "serverManager.h"
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
-#include <crypto.h>
+#include "crypto.h"
 
 Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false), readyToCommuinicate(true), m_inCounter(0), m_outCounter(0) {
 
@@ -115,53 +115,9 @@ IPv4 Client::getIPv4() const {
 	return IPv4(socket->peerAddress().toString().toStdString());
 }
 
-bool Client::sendMessage(quint8 messageType, QString message) {
-	QByteArray array;
-	QDataStream output(&array, QIODevice::WriteOnly);
-
-	size_t length;
-	unsigned char tag[16];
-	const unsigned char* uMessage = encryptMessage(messageType, &m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), &length, tag, m_aesKey);
-
-	if (uMessage == nullptr)
-	{
-		std::cout << "encryption failed" << std::endl;
-		return false;
-	}
-
-	output << length;
-	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
-	output.writeRawData(reinterpret_cast<const char*>(uMessage), length);
-	socket->write(array);
-	socket->waitForBytesWritten();
-	delete[] uMessage;
-
-	return true;
-}
-
-void Client::parseMessage(quint8* message_type, QString* message)
+bool Client::sendMessage(quint8 messageType, QString message)
 {
-	QDataStream u(socket);
-	unsigned char tag[16];
-	size_t messageLengt;
-	u >> messageLengt;
-	unsigned char *uMessage = new unsigned char[messageLengt];
-	u.readRawData(reinterpret_cast<char*>(tag), 16);
-
-	u.readRawData(reinterpret_cast<char*>(uMessage), messageLengt);
-	size_t decryptedLength;
-
-	const unsigned char* pMessage = decryptMessage(message_type, &m_inCounter, uMessage, messageLengt, nullptr, tag, m_aesKey);
-	if (pMessage == nullptr)
-	{
-		std::cout << "decryption fail" << std::endl;
-		delete[] uMessage;
-		return;
-	}
-	//uMessage[messageLengt] = '\0';
-	std::string messageString = std::string(reinterpret_cast<const char *>(pMessage), messageLengt - sizeof(quint8));
-	*message = QString::fromStdString(messageString);
-	delete[] uMessage;
+	return::sendMessage(socket, &m_outCounter, messageType, message, m_aesKey);
 }
 
 void Client::logInUser(std::string userName) {
@@ -180,7 +136,7 @@ void Client::readData()
 
 	quint8 messageType;
 	QString message;
-	parseMessage(&messageType, &message);
+	parseMessage(socket, &m_inCounter, &messageType, &message, m_aesKey);
 	QStringList list;
 	const unsigned char* uMessage;
 

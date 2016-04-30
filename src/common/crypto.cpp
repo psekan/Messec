@@ -2,6 +2,8 @@
 #include <cstring>
 #include <mbedtls/gcm.h>
 #include <iostream>
+#include <QtNetwork/QTcpSocket>
+#include <QtCore/QDataStream>
 
 
 bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key)
@@ -111,3 +113,51 @@ const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, cons
 	return nullptr;
 }
 
+bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType, QString message, unsigned char* m_aesKey) 
+{
+	QByteArray array;
+	QDataStream output(&array, QIODevice::WriteOnly);
+
+	size_t length;
+	unsigned char tag[16];
+	const unsigned char* uMessage = encryptMessage(messageType, m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), &length, tag, m_aesKey);
+
+	if (uMessage == nullptr)
+	{
+		std::cout << "encryption failed" << std::endl;
+		return false;
+	}
+
+	output << length;
+	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
+	output.writeRawData(reinterpret_cast<const char*>(uMessage), length);
+	socket->write(array);
+	socket->waitForBytesWritten();
+	delete[] uMessage;
+
+	return true;
+}
+
+void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_type, QString* message, unsigned char* m_aesKey)
+{
+	QDataStream u(socket);
+	unsigned char tag[16];
+	size_t messageLengt;
+	u >> messageLengt;
+	unsigned char *uMessage = new unsigned char[messageLengt];
+	u.readRawData(reinterpret_cast<char*>(tag), 16);
+	u.readRawData(reinterpret_cast<char*>(uMessage), messageLengt);
+	size_t decryptedLength;
+
+	const unsigned char* pMessage = decryptMessage(message_type, m_inCounter, uMessage, messageLengt, nullptr, tag, m_aesKey);
+	if (pMessage == nullptr)
+	{
+		std::cout << "decryption fail" << std::endl;
+		delete[] uMessage;
+		return;
+	}
+	//uMessage[messageLengt] = '\0';
+	std::string messageString = std::string(reinterpret_cast<const char *>(pMessage), messageLengt - sizeof(quint8));
+	*message = QString::fromStdString(messageString);
+	delete[] uMessage;
+}

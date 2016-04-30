@@ -93,7 +93,6 @@ public:
      * @param unsigned char* pointer to message data
      */
     bool sendMessage(quint8 messageType, QString message);
-	void parseMessage(quint8* message_type, QString* message);
 	signals:
 	
 	/**
