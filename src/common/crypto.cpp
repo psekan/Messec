@@ -2,8 +2,10 @@
 #include <cstring>
 #include <mbedtls/gcm.h>
 #include <iostream>
-#include <QtNetwork/QTcpSocket>
 #include <QtCore/QDataStream>
+#include <mbedtls/entropy_poll.h>
+#include <QtCore/qlist.h>
+#include "messageTypes.h"
 
 
 bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key)
@@ -83,7 +85,7 @@ const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const
 	return nullptr;
 }
 
-const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, const unsigned char* input, size_t inputLength, size_t* outputLength, unsigned char* tag, const unsigned char* key)
+const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, const unsigned char* input, size_t inputLength, unsigned char* tag, const unsigned char* key)
 {
 	(*counter)++;
 	unsigned char uCounter[4];
@@ -128,7 +130,7 @@ bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType,
 		return false;
 	}
 
-	output << length;
+	output << quint64(length);
 	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
 	output.writeRawData(reinterpret_cast<const char*>(uMessage), length);
 	socket->write(array);
@@ -142,14 +144,13 @@ void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_typ
 {
 	QDataStream u(socket);
 	unsigned char tag[16];
-	size_t messageLengt;
-	u >> messageLengt;
-	unsigned char *uMessage = new unsigned char[messageLengt];
+	quint64 messageLength;
+	u >> messageLength;
+	unsigned char *uMessage = new unsigned char[messageLength];
 	u.readRawData(reinterpret_cast<char*>(tag), 16);
-	u.readRawData(reinterpret_cast<char*>(uMessage), messageLengt);
-	size_t decryptedLength;
+	u.readRawData(reinterpret_cast<char*>(uMessage), messageLength);
 
-	const unsigned char* pMessage = decryptMessage(message_type, m_inCounter, uMessage, messageLengt, nullptr, tag, m_aesKey);
+	const unsigned char* pMessage = decryptMessage(message_type, m_inCounter, uMessage, messageLength, tag, m_aesKey);
 	if (pMessage == nullptr)
 	{
 		std::cout << "decryption fail" << std::endl;
@@ -157,7 +158,7 @@ void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_typ
 		return;
 	}
 	//uMessage[messageLengt] = '\0';
-	std::string messageString = std::string(reinterpret_cast<const char *>(pMessage), messageLengt - sizeof(quint8));
+	std::string messageString = std::string(reinterpret_cast<const char *>(pMessage), messageLength - sizeof(quint8));
 	*message = QString::fromStdString(messageString);
 	delete[] uMessage;
 }

@@ -85,12 +85,12 @@ TEST_CASE("Server tests") {
 	std::string pw[5] = { "password0", "password1", "password2", "password3", "password4" };
 
 	SECTION("Constructor database") {
-		CHECK_THROWS_AS(ServerManager nokserver("./a/b/c/d/database0.db",(qint16)8081, 2048, 0), DatabaseAccessForbidden);
-		CHECK_NOTHROW(ServerManager nokserver("database1.db", (qint16)8081, 2048, 0));
+		CHECK_THROWS_AS(ServerManager nokserver("./a/b/c/d/database0.db",(qint16)8082, 2048, 0), DatabaseAccessForbidden);
+		CHECK_NOTHROW(ServerManager nokserver("database1.db", (qint16)8082, 2048, 0));
 	}
 
 	SECTION("User registration") {
-		ServerManager myServer("database2.db", (qint16)8081, 2048, 0);
+		ServerManager myServer("database2.db", (qint16)8082, 2048, 0);
 		CHECK(myServer.userRegistration("John", "a") == false);
 		CHECK(myServer.userRegistration("Jack", "length7") == false);
 
@@ -112,7 +112,7 @@ TEST_CASE("Server tests") {
 	}
 
 	SECTION("User authentication") {
-		ServerManager myServer("database3.db", (qint16)8081, 2048, 0);
+		ServerManager myServer("database3.db", (qint16)8082, 2048, 0);
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
@@ -125,7 +125,7 @@ TEST_CASE("Server tests") {
 	}
 
 	/*SECTION("List of online users") {
-		ServerManager myServer("database4.db", (qint16)8081, 2048, 0);
+		ServerManager myServer("database4.db", (qint16)8082, 2048, 0);
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
@@ -159,7 +159,7 @@ TEST_CASE("Server tests") {
 	}
 
 	SECTION("Kick user") {
-		ServerManager myServer("database5.db", (qint16)8081, 2048, 0);
+		ServerManager myServer("database5.db", (qint16)8082, 2048, 0);
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
@@ -187,7 +187,7 @@ TEST_CASE("Server tests") {
 	}
 	*/
 	SECTION("delete user") {
-		ServerManager myServer("database6.db", (qint16)8081, 2048, 0);
+		ServerManager myServer("database6.db", (qint16)8082, 2048, 0);
 		for (int i = 0; i < 5; ++i) {
 			myServer.userRegistration(names[i], pw[i]);
 		}
