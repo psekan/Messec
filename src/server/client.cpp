@@ -5,6 +5,7 @@
 #include "client.h"
 #include "messageTypes.h"
 #include <QtGlobal>
+#include <QStringList>
 #include <QDataStream>
 #include <QHostAddress>
 #include <iostream>
@@ -45,7 +46,7 @@ void Client::setAES()
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
 	const char *personalization = "desifrovanie_za_pomoci_RSA";
-	size_t length = 0;
+	quint64 length = 0;
 	size_t length_decrypted = 0;
 	unsigned char input[512];
 	unsigned char output[512];
@@ -134,7 +135,6 @@ void Client::readData()
 	QString message;
 	parseMessage(socket, &m_inCounter, &messageType, &message, m_aesKey);
 	QStringList list;
-	const unsigned char* uMessage;
 
 	QString userName, userPassword;
 	switch (messageType) {

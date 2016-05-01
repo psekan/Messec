@@ -91,7 +91,7 @@ bool ClientManager::handleKeyDistribution()
 
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
-	str << length;
+	str << quint64(length);
 	str.writeRawData(reinterpret_cast<char*>(output), length);
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
