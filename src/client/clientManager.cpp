@@ -109,7 +109,7 @@ bool ClientManager::handleKeyDistribution()
 	return true;
 }
 
-ClientManager::ClientManager() : m_isLoggedIn(false), m_isConnected(false), m_serverSocket(nullptr), QTcpServer(0) {}
+ClientManager::ClientManager() : m_isLoggedIn(false), m_isConnected(false), m_serverSocket(nullptr), QTcpServer(0), m_isChatting(false) {}
 
 ClientManager::~ClientManager() {
 	disconnect();
@@ -127,11 +127,12 @@ void ClientManager::start() {
 	{
 		setPort(serverPort());
 		std::cout << "success on port " << m_clientPort << std::endl; ////////////////////////debug print
+		connect(this, SIGNAL(newConnection()), this, SLOT(connectionAvailable()));
 	}
 }
 
 
-bool ClientManager::signalconnect(QString ip, int port) {
+bool ClientManager::serverConnect(QString ip, quint16 port) {
 	m_serverSocket = new QTcpSocket(this);
 	QHostAddress addr(ip);
 	m_serverSocket->connectToHost(addr, port);
@@ -152,10 +153,6 @@ bool ClientManager::signalconnect(QString ip, int port) {
 	return false;
 }
 
-bool ClientManager::isConnected() const {
-	return m_isConnected;
-}
-
 void ClientManager::disconnect() {
 	if (m_serverSocket != nullptr)
 	{
@@ -164,6 +161,7 @@ void ClientManager::disconnect() {
 		m_serverSocket->disconnectFromHost();
 		delete m_serverSocket;
 		m_serverSocket = nullptr;
+		m_isChatting = false;
 	}
 }
 
@@ -199,7 +197,7 @@ bool ClientManager::signIn(QString userName, QString password) {
 bool ClientManager::logIn(QString userName, QString password) {
 	quint8 messageType = MESSAGETYPE_LOGIN;
 	QString messageSent = QString::fromStdString(userName.toStdString()) + "|#|" + QString::fromStdString(password.toStdString());
-	std::cout << "seidng data to server" << std::endl;
+	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
@@ -225,10 +223,6 @@ bool ClientManager::logIn(QString userName, QString password) {
 		std::cout << "failed with incoming unknown message: " << messageType << " " << messageRec.toStdString() << std::endl;
 	}
 	return false;
-}
-
-bool ClientManager::isLoggedIn() const {
-	return m_isLoggedIn;
 }
 
 void ClientManager::logOut() {
@@ -272,17 +266,6 @@ std::vector<Messenger*> ClientManager::getMessengers() const {
 	return m_messengers;
 }
 
-Messenger* ClientManager::newMessenger(qintptr socketDescriptor, QString userName) {
-	/*Messenger* mes = new Messenger(socketDescriptor, userName, this);
-	m_peerSocket = new QTcpSocket(this);
-	m_peerSocket->setSocketDescriptor(socketDescriptor);
-	mes->start();
-	//QMutexLocker locker(&mutex);
-	m_messengers.push_back(mes);
-	return mes;*/
-	return nullptr;
-}
-
 void ClientManager::deleteMessenger() {
 	Messenger* msngr = dynamic_cast<Messenger*>(sender());
 	if (msngr == nullptr)
@@ -296,42 +279,36 @@ void ClientManager::deleteMessenger() {
 	m_messengers.erase(it);
 	delete msngr;
 	std::cout << "Messenger deleted" << std::endl; ////////////////////////////////////debug print
+	m_isChatting = false;
+	quint8 messageType = MESSAGETYPE_CHAT_END;
+	QString messageSent = "";
+	std::cout << "chat end" << std::endl;
+	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 }
 
-
-
 bool ClientManager::startCommunicationWith(QString userName) {
-	QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
 	quint8 messageType = MESSAGETYPE_GET_PARTNER;
-	str << messageType;
-	str << userName;
-	m_serverSocket->write(arr);
-	m_serverSocket->waitForBytesWritten();
-	m_serverSocket->waitForReadyRead();
+	sendMessage(m_serverSocket, &m_outCounter, messageType, userName, m_aesKey);
 
+	m_serverSocket->waitForReadyRead();
 	QDataStream response(m_serverSocket);
 	response >> messageType;
 	if (messageType == MESSAGETYPE_PARTNER_INFO)
 	{
+		std::cout << "Got response from server" << std::endl;
 		QString ip;
 		quint16 port;
 		response >> port >> ip;
-		/*QTcpSocket* m_peerSocket = new QTcpSocket(this);
-		QHostAddress addr(ip);
-		m_peerSocket->connectToHost(addr, port);
-		if (!m_peerSocket->waitForConnected()) {
-			std::cerr << "Could not connect to |" << ip.toStdString() << "|, " << addr.toString().toStdString() << " on port |" << port << "|" << std::endl;
-			std::cout << "Connect failed" << std::endl;
-			return false;
-		}*/
+		std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl; //////////////// debug print
 		Messenger* msngr = new Messenger(ip, port, userName, this);
 		msngr->start();
 		connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
-		connect(this, SIGNAL(sendSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
-		connect(this, SIGNAL(finished()), msngr, SLOT(quit()), Qt::DirectConnection);
+		connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
+		connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
+		//connect(parent(), SIGNAL(finished()), msngr, SLOT(quit()), Qt::DirectConnection);
 		m_messengers.push_back(msngr);
-		std::cout << "Connection with " << /*userName.toStdString() <<*/ " is ready" << std::endl;
+		std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
+		m_isChatting = true;
 		return true;
 	}
 	else if (messageType == MESSAGETYPE_PARTNER_NOT_READY)
@@ -342,24 +319,29 @@ bool ClientManager::startCommunicationWith(QString userName) {
 }
 
 
-void ClientManager::incomingConnection(qintptr socketDescriptor)
+void ClientManager::incomingConnection(qintptr handle)
 {
 	std::cout << "Incoming connection " << std::endl;///////////////////////debug print
-	Messenger* mes = new Messenger(socketDescriptor, this);
+	Messenger* mes = new Messenger(handle, this);
 	mes->start();
 	connect(mes, SIGNAL(finished()), this, SLOT(deleteMessenger()));
-	connect(this, SIGNAL(sendSignal(QString)), mes, SLOT(sendNotCrypted(QString)));
 	connect(this, SIGNAL(finished()), mes, SLOT(quit()), Qt::DirectConnection);
+	connect(this, SIGNAL(sendMsgSignal(QString)), mes, SLOT(sendNotCrypted(QString)));
+	connect(this, SIGNAL(disconnectClientSignal()), mes, SLOT(quitMessenger()));
 	m_messengers.push_back(mes);
+	m_isChatting = true;
 }
 
 void ClientManager::sendToMessenger(QString msg) {
-	emit sendSignal(msg);
-	/*QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
-	quint8 messageType = MESSAGETYPE_MESSAGE;
-	str << messageType;
-	str << msg;
-	m_peerSocket->write(arr);
-	m_peerSocket->waitForBytesWritten();*/
+	emit sendMsgSignal(msg);
 }
+
+void ClientManager::chatEnd(){	
+	emit disconnectClientSignal();
+}
+
+void ClientManager::connectionAvailable() {
+	std::cout << "signal emitted Incoming connection " << std::endl;///////////////////////debug print
+
+}
+

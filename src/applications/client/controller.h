@@ -10,15 +10,15 @@
 #include <QThread>
 #include <clientManager.h>
 #include <string>
-#define  COMMAND_COUNT 10
+#define  COMMAND_COUNT 11
 
 using namespace std;
 
 class Controler : public QThread
 {
 	Q_OBJECT
-	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS, CHAT, SEND, HELP };
-	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users", "chat", "send", "help" };
+	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS, CHAT, CHATEND, SEND, HELP };
+	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users", "chat", "chatend", "send", "help" };
 
 public:
 	/**
@@ -40,7 +40,8 @@ public:
 		string inCommand;
 		int commandIndex;
 		bool runOk = true;
-		cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | send | help" << endl;
+
+		cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | chatend | send | help" << endl;
 		while (runOk) {
 			cin >> inCommand;
 			commandIndex = -1;
@@ -62,13 +63,13 @@ public:
 				break;
 				}
 				string ipaddr;
-				int port = 0;
+				quint16 port = 0;
 
 				cout << "Write host address: ";
 				cin >> ipaddr;
 				cout << "Write host port: ";
 				cin >> port;
-				clientMngr.signalconnect(QString(ipaddr.c_str()), port);
+				clientMngr.serverConnect(QString(ipaddr.c_str()), port);
 				break;
 			}
 			case DISCONNECT: {
@@ -148,6 +149,15 @@ public:
 				clientMngr.startCommunicationWith(QString(partner.c_str()));
 				break;
 			}
+			case CHATEND: {
+				if (!clientMngr.isChatting())
+				{
+					std::cout << "you are not chatting" << std::endl;
+					break;
+				}
+				clientMngr.chatEnd();
+				break;
+			}
 			case SEND: {
 				if (!clientMngr.isLoggedIn())
 				{
@@ -159,11 +169,10 @@ public:
 				//getline(std::cin, msg);
 				std::cin >> msg;
 				clientMngr.sendToMessenger(QString::fromStdString(msg));
-
 				break;
 			}
 			case HELP: {
-				cout << "commands: quit | connect | disconnect | signin | login | logout | users | help" << endl;
+				cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | chatend | send | help" << endl;
 				break;
 			}
 			default: {

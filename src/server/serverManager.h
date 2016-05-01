@@ -21,7 +21,7 @@
 class ServerManager : public QTcpServer
 {
 	Q_OBJECT
-	qint16 port;
+	quint16 port;
 	
     unsigned int m_socket;
     mbedtls_pk_context m_rsaKey;
@@ -58,7 +58,7 @@ public:
 	* @param qint16 port on tcp protocol
 	* @param quint16 length of rsa key in bits
 	*/
-	explicit ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent = 0);
+	explicit ServerManager(std::string dbFilePath, quint16 port, quint16 keySize, QObject *parent = 0);
 
 	~ServerManager();
 

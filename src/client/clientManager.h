@@ -20,9 +20,10 @@
 class ClientManager : public QTcpServer {
 	Q_OBJECT
 
-		//Boolean values
-		bool m_isConnected;
+	//Boolean values
+	bool m_isConnected;
 	bool m_isLoggedIn;
+	bool m_isChatting;
 
 	//Connection with server
 	QTcpSocket* m_serverSocket;
@@ -76,15 +77,26 @@ public:
 	 * Check if client is connected to server.
 	 * @return bool true if connection is available
 	 */
-	bool isConnected() const;
+	bool isConnected() const {
+		return m_isConnected;
+	}
 
 	/**
 	 * Check if client is logged in to the server.
 	 * @return bool true if user is logged in
 	 */
-	bool isLoggedIn() const;
+	bool isLoggedIn() const {
+		return m_isLoggedIn;
+	}
 
-	Messenger* newMessenger(qintptr socketDescriptor, QString userName);
+
+	/**
+	* Check if client is chatting with other client.
+	* @return bool true if user is chatting
+	*/
+	bool isChatting() const {
+		return m_isChatting;
+	}
 
 	/**
 	 * Get all active messengers
@@ -106,7 +118,7 @@ public:
 	* @param int tcp port number of server
 	* @return bool true if connection is successfully realized.
 	*/
-	bool signalconnect(QString ip, int port);
+	bool serverConnect(QString ip, quint16 port);
 
 	/**
 	* Disconnect client from server.
@@ -143,6 +155,7 @@ public:
 	bool logIn(QString userName, QString password);
 
 	void sendToMessenger(QString msg);
+	void chatEnd();
 
 protected:
 
@@ -150,9 +163,11 @@ protected:
 	
 public slots:
 	void deleteMessenger();
+	void connectionAvailable();
 
 signals:
-	void sendSignal(QString msg);
+	void sendMsgSignal(QString msg);
+	void disconnectClientSignal();
 
 };
 #endif //MESSEC_CLIENTMANAGER_H

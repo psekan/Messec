@@ -62,13 +62,18 @@ public:
 
 	Messenger(QString ip, quint16 port, QString name, QObject *parent);
 
-	Messenger(quintptr SocketDescriptor, QObject *parent);
+	Messenger(qintptr SocketDescriptor, QObject *parent);
 
 	/**
 	* Constructor for ClientManager.
 	* @param std::string user name of other client
 	*/
 	Messenger(std::string userName, unsigned int socket, unsigned char aesKey[32], unsigned char aesIv[32], unsigned int inCounter, unsigned int outCounter);
+
+	/**
+	* Destructor disconnects and delete socket
+	*/
+	~Messenger();
 
     /**
      * Check if connection between clients is alive.
@@ -139,6 +144,7 @@ public:
 public slots:
 	void readData();
 	void sendNotCrypted(QString msg);
+	void quitMessenger(); 
 
 };
 

@@ -60,7 +60,7 @@ void stringToUCHar(std::string &input, unsigned char* output)
 }
 
 /*Constructor*/
-ServerManager::ServerManager(std::string dbFilePath, qint16 port, quint16 keySize, QObject *parent) : QTcpServer(parent), port(port), m_database(dbFilePath) {
+ServerManager::ServerManager(std::string dbFilePath, quint16 port, quint16 keySize, QObject *parent) : QTcpServer(parent), port(port), m_database(dbFilePath) {
 	std::cout << "Generating RSA key" << std::endl;
 	if (generateRSAKey()) {
 		std::cout << "Something went wrong with generating RSA key" << std::endl;
@@ -355,7 +355,14 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 	}
 	locker.unlock();
 	message = "";
-	srcClient->sendMessage(MESSAGETYPE_PARTNER_NOT_READY, message);
+	//srcClient->sendMessage(MESSAGETYPE_PARTNER_NOT_READY, message); //right send
+	////////////////////not encrypted send
+	QByteArray array;
+	QDataStream output(&array, QIODevice::WriteOnly);
+	output << quint8(MESSAGETYPE_PARTNER_NOT_READY);
+	srcClient->socket->write(array);
+	srcClient->socket->waitForBytesWritten();
+	/////////////////////////
 }
 
 mbedtls_pk_context ServerManager::getRSAKey() const

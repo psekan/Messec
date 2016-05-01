@@ -22,35 +22,53 @@ Messenger::Messenger(std::string userName, unsigned int socket, unsigned char ae
 	m_isAlive = true;
 }
 
-Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : QThread(parent), m_isAlive(true) {
-	socket = new QTcpSocket(this);
+Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : QThread(parent) {
+	socket = new QTcpSocket(parent);
 	QHostAddress addr(ip);
 	socket->connectToHost(addr, port);
-	if (!socket->waitForConnected()) {
+	std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl;
+	if (!socket->waitForConnected()) 
+	{
 		std::cerr << "Could not connect to |" << ip.toStdString() << "|, " << addr.toString().toStdString() << " on port |" << port << "|" << std::endl;
 		std::cout << "Connect failed" << std::endl;
 		delete socket;
+		m_isAlive = false;
 	}
-	std::cout << "Connection to " << name.toStdString() << "successful" << std::endl;
+	else
+	{
+		std::cout << "Connection to " << name.toStdString() << " successful" << std::endl;
+		m_isAlive = true;
+	}
 }
 
-Messenger::Messenger(quintptr socketDescriptor, QObject *parent) : QThread(parent), m_isAlive(true) {
-	socket = new QTcpSocket(this);
+Messenger::Messenger(qintptr socketDescriptor, QObject *parent) : QThread(parent) {
+	socket = new QTcpSocket(parent);
 	if (socket->setSocketDescriptor(socketDescriptor))
+	{
 		std::cout << "Setting socket successful" << std::endl;
-	else
+		m_isAlive = true;
+	}
+	else {
 		std::cout << "Setting socket failed" << std::endl;
+		m_isAlive = false;
+	}
+
 }
 
 void Messenger::run() {
-	//socket = new QTcpSocket(NULL);
-	//socket->setSocketDescriptor(sock_ptr);
 	connect(this, SIGNAL(finished()), this, SLOT(deleteLater()), Qt::DirectConnection);
 	connect(socket, SIGNAL(readyRead()), this, SLOT(readData()), Qt::DirectConnection);
 	connect(socket, SIGNAL(disconnected()), this, SLOT(quit()), Qt::DirectConnection);
-	//const QHostAddress &connected = socket->peerAddress();
-	//qDebug() << connected.toString();
 	exec();
+}
+
+Messenger::~Messenger() {
+	if (socket != nullptr)
+	{
+		socket->disconnectFromHost();
+		delete socket;
+	}
+	std::cout << "Messenger destructor" << std::endl;
 }
 
 bool Messenger::isAlive() const {
@@ -196,4 +214,9 @@ void Messenger::sendNotCrypted(QString msg) {
 	str << msg;
 	socket->write(arr);
 	socket->waitForBytesWritten();
+}
+
+
+void Messenger::quitMessenger() {
+	this->exit(0);
 }
