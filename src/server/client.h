@@ -11,7 +11,6 @@
 #include <QTcpSocket>
 
 #include <string>
-#include "../common/ipv4.h"
 
 class ServerManager;
 
@@ -80,12 +79,6 @@ public:
 	quint16 getClientPort() {
 		return m_clientPort;
 	}
-
-    /**
-     * Get client ip.
-     * @return IPv4 ip
-     */
-    IPv4 getIPv4() const;
 
     /**
      * Encrypt message with aes key and send to client.

@@ -111,10 +111,6 @@ bool Client::isLoggedIn() const {
 	return m_isLoggedIn;
 }
 
-IPv4 Client::getIPv4() const {
-	return IPv4(socket->peerAddress().toString().toStdString());
-}
-
 bool Client::sendMessage(quint8 messageType, QString message)
 {
 	return::sendMessage(socket, &m_outCounter, messageType, message, m_aesKey);
