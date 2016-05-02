@@ -178,10 +178,8 @@ public:
 					std::cout << "you are not logged in" << std::endl;
 					break;
 				}
-				std::cout << "Message: " << std::endl;
 				string msg;
-				//getline(std::cin, msg);
-				std::cin >> msg;
+				getline(std::cin, msg);
 				emit sendToMessenger(QString::fromStdString(msg));
 				break;
 			}

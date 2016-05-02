@@ -102,7 +102,7 @@ bool ClientManager::handleKeyDistribution()
 
 	if (result != 0)
 	{
-		std::cout << "keys wasnt distributed correctly" << std::endl;
+		std::cout << "keys were not distributed correctly" << std::endl;
 		return false;
 	}
 
@@ -127,7 +127,6 @@ void ClientManager::start() {
 	{
 		setPort(serverPort());
 		std::cout << "success on port " << m_clientPort << std::endl; ////////////////////////debug print
-		//connect(this, SIGNAL(newConnection()), this, SLOT(connectionAvailable()));
 	}
 }
 
@@ -149,7 +148,7 @@ void ClientManager::serverConnect(QString ip, quint16 port) {
 		std::cout << "Successfully connected" << std::endl;
 		return;
 	}
-	std::cout << "Coudlnt connect" << std::endl;
+	std::cout << "Could not connect" << std::endl;
 	return;
 }
 
@@ -168,7 +167,7 @@ void ClientManager::disconnect() {
 void ClientManager::signIn(QString userName, QString password) {
 	quint8 messageType = MESSAGETYPE_SIGNIN;
 	QString messageSent = QString::fromStdString(userName.toStdString()) + "|#|" + QString::fromStdString(password.toStdString());
-	std::cout << "seidng data to server" << std::endl;
+	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
@@ -228,7 +227,7 @@ void ClientManager::logIn(QString userName, QString password) {
 void ClientManager::logOut() {
 	quint8 messageType = MESSAGETYPE_LOGOUT;
 	QString messageSent = "";
-	std::cout << "seidng data to server" << std::endl;
+	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 	std::cout << "you are now logged off" << std::endl;
 	m_isLoggedIn = false;
@@ -237,7 +236,7 @@ void ClientManager::logOut() {
 void ClientManager::getOnlineUsers() {
 	quint8 messageType = MESSAGETYPE_GET_ONLINE_USERS;
 	QString messageSent = "";
-	std::cout << "seidng data to server" << std::endl;
+	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
@@ -278,11 +277,10 @@ void ClientManager::deleteMessenger() {
 	auto it = std::find(m_messengers.begin(), m_messengers.end(), msngr);
 	m_messengers.erase(it);
 	delete msngr;
-	std::cout << "Messenger deleted" << std::endl; ////////////////////////////////////debug print
 	m_isChatting = false;
 	quint8 messageType = MESSAGETYPE_CHAT_END;
 	QString messageSent = "";
-	std::cout << "chat end" << std::endl;
+	std::cout << "chat closed" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 }
 
@@ -295,7 +293,6 @@ void ClientManager::startCommunicationWith(QString userName) {
 	response >> messageType;
 	if (messageType == MESSAGETYPE_PARTNER_INFO)
 	{
-		std::cout << "Got response from server" << std::endl;
 		QString ip;
 		quint16 port;
 		response >> port >> ip;
@@ -305,7 +302,6 @@ void ClientManager::startCommunicationWith(QString userName) {
 		connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
 		connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
 		msngr->start();
-		//connect(parent(), SIGNAL(finished()), msngr, SLOT(quit()), Qt::DirectConnection);
 		m_messengers.push_back(msngr);
 		std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
 		m_isChatting = true;
@@ -337,9 +333,4 @@ void ClientManager::sendToMessenger(QString msg) {
 
 void ClientManager::chatEnd(){	
 	emit disconnectClientSignal();
-}
-
-void ClientManager::connectionAvailable() {
-	std::cout << "signal emitted Incoming connection " << std::endl;///////////////////////debug print
-
 }

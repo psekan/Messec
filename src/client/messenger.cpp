@@ -26,7 +26,6 @@ Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : 
 	socket = new QTcpSocket(parent);
 	QHostAddress addr(ip);
 	socket->connectToHost(addr, port);
-	std::cout << "port: " << port << " ip: " << addr.toString().toStdString() << std::endl;
 	if (!socket->waitForConnected()) 
 	{
 		std::cerr << "Could not connect to |" << ip.toStdString() << "|, " << addr.toString().toStdString() << " on port |" << port << "|" << std::endl;
@@ -35,15 +34,13 @@ Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : 
 		m_isAlive = false;
 	}
 	else
-	{
-		std::cout << "Connection to " << name.toStdString() << " successful" << std::endl;
 		m_isAlive = true;
-	}
 }
 
 Messenger::Messenger(qintptr socketDescriptor, QObject *parent) : QThread(parent) {
 	socket = new QTcpSocket(parent);
-	if (socket->setSocketDescriptor(socketDescriptor))
+	socket->setSocketDescriptor(socketDescriptor);
+	/*if (socket->setSocketDescriptor(socketDescriptor))
 	{
 		std::cout << "Setting socket successful" << std::endl;
 		m_isAlive = true;
@@ -51,8 +48,7 @@ Messenger::Messenger(qintptr socketDescriptor, QObject *parent) : QThread(parent
 	else {
 		std::cout << "Setting socket failed" << std::endl;
 		m_isAlive = false;
-	}
-
+	}*/
 }
 
 void Messenger::run() {
@@ -68,7 +64,6 @@ Messenger::~Messenger() {
 		socket->disconnectFromHost();
 		delete socket;
 	}
-	std::cout << "Messenger destructor" << std::endl;
 }
 
 bool Messenger::isAlive() const {

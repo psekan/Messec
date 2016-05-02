@@ -110,7 +110,6 @@ protected:
 	
 public slots:
 	void deleteMessenger();
-	void connectionAvailable();
 
 	/**
 	* Connect client to server.
