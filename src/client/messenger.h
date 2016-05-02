@@ -52,6 +52,8 @@ class Messenger : public QThread {
 	* @param const unsigned char* length of data
 	*/
 	static void addToBuffer(unsigned char*&buffer, const unsigned char* data, size_t dataLength);
+
+	void saveFile(QString name, QString content);
 public:
 	//Constant
 	const static size_t MESSAGE_INFO_SIZE = 37;
@@ -95,7 +97,7 @@ public:
      * @param unsigned char* message's bytes
      * @return bool true is message was successfully sent
      */
-    bool sendMessage(unsigned char messageType, size_t messageLength, const unsigned char* message);
+    bool sendMessageC(unsigned char messageType, size_t messageLength, const unsigned char* message);
 
 	/**
 	 * Build byte stream to send other client
@@ -145,6 +147,8 @@ public slots:
 	void readData();
 	void sendNotCrypted(QString msg);
 	void quitMessenger(); 
+	void sendFile(QString msg);
+	void sendFileThread(QString msg);
 
 };
 

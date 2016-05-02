@@ -3,6 +3,7 @@
 //
 
 #include "messenger.h"
+#include "crypto.h"
 #include <mbedtls/gcm.h>
 #include <string.h>
 #include <limits.h>
@@ -10,6 +11,8 @@
 #include <QDataStream>
 #include "messageTypes.h"
 #include <QHostAddress>
+#include <QFile>
+#include <QTextStream>
 
 void Messenger::setAes(unsigned char aesKey[32], unsigned char aesIv[32]) {
 	memcpy(this->m_aesKey, aesKey, sizeof(unsigned char) * 32);
@@ -74,7 +77,7 @@ void Messenger::exitCommunication() {
 	m_isAlive = false;
 }
 
-bool Messenger::sendMessage(unsigned char messageType, size_t messageLength, const unsigned char* message) {
+bool Messenger::sendMessageC(unsigned char messageType, size_t messageLength, const unsigned char* message) {
 	unsigned char* preparedMessageBuffer = new unsigned char[messageLength + 21];
 	if (!prepareMessageToSend(messageType, messageLength, message, preparedMessageBuffer)) {
 		delete[] preparedMessageBuffer;
@@ -184,16 +187,18 @@ void Messenger::addToBuffer(unsigned char*& buffer, const unsigned char* data, s
 
 void Messenger::readData() {
 	std::cout << "Reading data" << std::endl;
-	QDataStream input(socket);
 	quint8 messageType;
-	QString msg;
-	//TODO decrypt
-	input >> messageType;
+	QString message;
+	parseMessage(socket, &m_inCounter, &messageType, &message, m_aesKey);
+	QStringList list;
 
 	switch (messageType) {
 	case MESSAGETYPE_MESSAGE:
-		input >> msg;
-		std::cout << msg.toStdString() << std::endl;
+		std::cout << message.toStdString() << std::endl;
+		break;
+	case MESSAGETYPE_FILE:
+		list = message.split("||##||");
+		saveFile(list[0], list[1]);
 		break;
 	default:
 		std::cout << "Unknown message type" << std::endl;
@@ -201,17 +206,42 @@ void Messenger::readData() {
 	}
 
 }
+
 void Messenger::sendNotCrypted(QString msg) {
-	QByteArray arr;
-	QDataStream str(&arr, QIODevice::WriteOnly);
-	quint8 messageType = MESSAGETYPE_MESSAGE;
-	str << messageType;
-	str << msg;
-	socket->write(arr);
-	socket->waitForBytesWritten();
+	sendMessage(socket, &m_outCounter, MESSAGETYPE_MESSAGE, msg, m_aesKey);
 }
 
 
 void Messenger::quitMessenger() {
 	this->exit(0);
+}
+
+void Messenger::sendFile(QString msg)
+{
+	QFile f(msg);
+	if (!f.open(QFile::ReadOnly)) {
+		std::cout << "Cannot open file '" << msg.toStdString() << "'" << std::endl;
+		return;
+	}
+	QTextStream in(&f);
+
+	sendMessage(socket, &m_outCounter, MESSAGETYPE_FILE,  msg + "||##||" + in.readAll(), m_aesKey);
+	f.close();
+}
+
+void Messenger::sendFileThread(QString msg)
+{
+	
+}
+
+void Messenger::saveFile(QString name, QString content)
+{
+	QFile f(name);
+	if (!f.open(QFile::WriteOnly)) {
+		std::cout << "Cannot open file '" << name.toStdString() << "'" << std::endl;
+		return;
+	}
+	QTextStream outStream(&f);
+	outStream << content;
+	f.close();
 }
