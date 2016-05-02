@@ -45,9 +45,9 @@ bool ClientManager::handleKeyDistribution()
 	mbedtls_mpi_write_file("Public exponent:  ", &rsa->E, 16, stdout);
 	bool answered = false;
 
-	std::cout << "Do you trust this key? y/n" << std::endl;
+	std::cout << "If you do not trust this key, close connection." << std::endl;
 
-	while (!answered)
+	/*while (!answered)
 	{
 		char answer = getchar();
 		switch (answer)
@@ -65,7 +65,7 @@ bool ClientManager::handleKeyDistribution()
 			getchar();
 			break;
 		}
-	}
+	}*/
 
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
@@ -109,7 +109,7 @@ bool ClientManager::handleKeyDistribution()
 	return true;
 }
 
-ClientManager::ClientManager() : m_isLoggedIn(false), m_isConnected(false), m_serverSocket(nullptr), QTcpServer(0), m_isChatting(false) {}
+ClientManager::ClientManager(QObject *parent) : QTcpServer(parent), m_isLoggedIn(false), m_isConnected(false), m_serverSocket(nullptr), m_isChatting(false) {}
 
 ClientManager::~ClientManager() {
 	disconnect();
@@ -127,19 +127,19 @@ void ClientManager::start() {
 	{
 		setPort(serverPort());
 		std::cout << "success on port " << m_clientPort << std::endl; ////////////////////////debug print
-		connect(this, SIGNAL(newConnection()), this, SLOT(connectionAvailable()));
+		//connect(this, SIGNAL(newConnection()), this, SLOT(connectionAvailable()));
 	}
 }
 
 
-bool ClientManager::serverConnect(QString ip, quint16 port) {
+void ClientManager::serverConnect(QString ip, quint16 port) {
 	m_serverSocket = new QTcpSocket(this);
 	QHostAddress addr(ip);
 	m_serverSocket->connectToHost(addr, port);
 	if (!m_serverSocket->waitForConnected()) {
 		std::cerr << "Could not connect to " << ip.toStdString() << ", " << addr.toString().toStdString() << std::endl;
 		std::cout << "Connect failed" << std::endl;
-		return false;
+		return;
 	}
 
 	if (handleKeyDistribution()) {
@@ -147,10 +147,10 @@ bool ClientManager::serverConnect(QString ip, quint16 port) {
 		m_outCounter = 0;
 		m_inCounter = 0;
 		std::cout << "Successfully connected" << std::endl;
-		return true;
+		return;
 	}
 	std::cout << "Coudlnt connect" << std::endl;
-	return false;
+	return;
 }
 
 void ClientManager::disconnect() {
@@ -165,7 +165,7 @@ void ClientManager::disconnect() {
 	}
 }
 
-bool ClientManager::signIn(QString userName, QString password) {
+void ClientManager::signIn(QString userName, QString password) {
 	quint8 messageType = MESSAGETYPE_SIGNIN;
 	QString messageSent = QString::fromStdString(userName.toStdString()) + "|#|" + QString::fromStdString(password.toStdString());
 	std::cout << "seidng data to server" << std::endl;
@@ -181,7 +181,7 @@ bool ClientManager::signIn(QString userName, QString password) {
 	if (messageType == MESSAGETYPE_SIGNIN_SUCCESS)
 	{
 		std::cout << "successful" << std::endl;
-		return true;
+		return;
 	}
 	else if (messageType == MESSAGETYPE_SIGNIN_FAIL)
 	{
@@ -191,12 +191,12 @@ bool ClientManager::signIn(QString userName, QString password) {
 	{
 		std::cout << "failed with incoming unknown message: " << messageType << messageRec.toStdString() << std::endl;
 	}
-	return false;
+	return;
 }
 
-bool ClientManager::logIn(QString userName, QString password) {
+void ClientManager::logIn(QString userName, QString password) {
 	quint8 messageType = MESSAGETYPE_LOGIN;
-	QString messageSent = QString::fromStdString(userName.toStdString()) + "|#|" + QString::fromStdString(password.toStdString());
+	QString messageSent = userName + "|#|" + password;
 	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 	std::cout << "waiting for response" << std::endl;
@@ -212,7 +212,7 @@ bool ClientManager::logIn(QString userName, QString password) {
 	{
 		std::cout << "successful" << std::endl;
 		m_isLoggedIn = true;
-		return true;
+		return;
 	}
 	else if (messageType == MESSAGETYPE_LOGIN_FAIL)
 	{
@@ -222,7 +222,7 @@ bool ClientManager::logIn(QString userName, QString password) {
 	{
 		std::cout << "failed with incoming unknown message: " << messageType << " " << messageRec.toStdString() << std::endl;
 	}
-	return false;
+	return;
 }
 
 void ClientManager::logOut() {
@@ -286,7 +286,7 @@ void ClientManager::deleteMessenger() {
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 }
 
-bool ClientManager::startCommunicationWith(QString userName) {
+void ClientManager::startCommunicationWith(QString userName) {
 	quint8 messageType = MESSAGETYPE_GET_PARTNER;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, userName, m_aesKey);
 
@@ -301,21 +301,21 @@ bool ClientManager::startCommunicationWith(QString userName) {
 		response >> port >> ip;
 		std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl; //////////////// debug print
 		Messenger* msngr = new Messenger(ip, port, userName, this);
-		msngr->start();
 		connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
 		connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
 		connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
+		msngr->start();
 		//connect(parent(), SIGNAL(finished()), msngr, SLOT(quit()), Qt::DirectConnection);
 		m_messengers.push_back(msngr);
 		std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
 		m_isChatting = true;
-		return true;
+		return;
 	}
 	else if (messageType == MESSAGETYPE_PARTNER_NOT_READY)
 		std::cout << "User " << userName.toStdString() << " is not ready for communication" << std::endl;
 	else
 		std::cout << "Incoming unknown messagetype: " << messageType << std::endl;
-	return false;
+	return;
 }
 
 
@@ -325,7 +325,6 @@ void ClientManager::incomingConnection(qintptr handle)
 	Messenger* mes = new Messenger(handle, this);
 	mes->start();
 	connect(mes, SIGNAL(finished()), this, SLOT(deleteMessenger()));
-	connect(this, SIGNAL(finished()), mes, SLOT(quit()), Qt::DirectConnection);
 	connect(this, SIGNAL(sendMsgSignal(QString)), mes, SLOT(sendNotCrypted(QString)));
 	connect(this, SIGNAL(disconnectClientSignal()), mes, SLOT(quitMessenger()));
 	m_messengers.push_back(mes);
@@ -344,4 +343,3 @@ void ClientManager::connectionAvailable() {
 	std::cout << "signal emitted Incoming connection " << std::endl;///////////////////////debug print
 
 }
-

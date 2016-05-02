@@ -5,7 +5,7 @@
 #include <vector>
 #include "../client/messenger.h"
 
-TEST_CASE("Database tests") {
+TEST_CASE("Database tests", "[database_tests]") {
 	SECTION("Constructor database") {
 		CHECK_THROWS_AS(Database nokDb("./a/b/c/d/database00.db"), DatabaseAccessForbidden);
 		CHECK_NOTHROW(Database okDb("database8.db"));
@@ -80,7 +80,7 @@ TEST_CASE("Database tests") {
 	}
 }
 
-TEST_CASE("Server tests") {
+TEST_CASE("Server tests", "[server_test][tcp]") {
 	std::string names[5] = { "name0", "name1", "name2", "name3", "name4" };
 	std::string pw[5] = { "password0", "password1", "password2", "password3", "password4" };
 
@@ -198,7 +198,7 @@ TEST_CASE("Server tests") {
 	}
 }
 
-TEST_CASE("Encryption_Decryption") {
+TEST_CASE("Encryption_Decryption","[ende]") {
 	SECTION("input == dec(enc(input))") {
 		const unsigned char input[30] = { 'T','h','i','s','_','i','s','_','m','y','_','s','u','p','e','r','_','t','e','s','t','_','m','e','s','s','a','g','e','!' };
 		const unsigned char key[32] = { '0','1','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9','0','1','2','3','4','5','6','7','8','9','0','1' };
@@ -398,7 +398,7 @@ TEST_CASE("Send/Receive message") {
 
 }
 */
-TEST_CASE("Database") {
+TEST_CASE("Database","[database]") {
 	CHECK_NOTHROW(Database database("database7.db"));
 	Database database("database7.db");
 	database.clearDatabase();

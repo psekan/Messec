@@ -51,16 +51,16 @@ int generateRandomNumber(unsigned char* output, int output_len)
 	return result;
 }
 
-const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const unsigned char* input, size_t inputLength, size_t* outputLength, unsigned char* tag, const unsigned char* key)
+const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const unsigned char* input, size_t inputLength, size_t& outputLength, unsigned char* tag, const unsigned char* key)
 {
 	(*counter)++;
 	unsigned char uCounter[4];
 	unsigned char output[64];
 	unsigned char IV[16];
 	size_t sizeOfMessageType = sizeof(quint8);
-	*outputLength = inputLength + sizeOfMessageType;
-    unsigned char* preparedMessageBuffer = new unsigned char[*outputLength];
-	unsigned char* encryptedMessage = new unsigned char[*outputLength];
+	outputLength = inputLength + sizeOfMessageType;
+    unsigned char* preparedMessageBuffer = new unsigned char[outputLength];
+	unsigned char* encryptedMessage = new unsigned char[outputLength];
 	
 	memcpy(uCounter, counter, 4);
 	mbedtls_sha512(uCounter, 4, output, 0);
@@ -69,7 +69,7 @@ const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const
 	memcpy(preparedMessageBuffer, &messageType, sizeOfMessageType);
 	memcpy(preparedMessageBuffer + sizeOfMessageType, input, inputLength);
 
-	if(encrypt(preparedMessageBuffer, *outputLength, encryptedMessage, IV, 16, tag, key))
+	if(encrypt(preparedMessageBuffer, outputLength, encryptedMessage, IV, 16, tag, key))
 	{
 		/*std::cout << "sending lenght: " << *outputLength << " counter: " << *counter << " sending tag: ";
 		std::cout.write(reinterpret_cast<char*>(tag), 16) << " sending message: ";
@@ -122,7 +122,7 @@ bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType,
 
 	size_t length;
 	unsigned char tag[16];
-	const unsigned char* uMessage = encryptMessage(messageType, m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), &length, tag, m_aesKey);
+	const unsigned char* uMessage = encryptMessage(messageType, m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), length, tag, m_aesKey);
 
 	if (uMessage == nullptr)
 	{
@@ -130,7 +130,7 @@ bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType,
 		return false;
 	}
 
-	output << quint64(length);
+	output.writeRawData(reinterpret_cast<const char*>(&length), sizeof(size_t));
 	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
 	output.writeRawData(reinterpret_cast<const char*>(uMessage), length);
 	socket->write(array);
@@ -144,8 +144,8 @@ void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_typ
 {
 	QDataStream u(socket);
 	unsigned char tag[16];
-	quint64 messageLength;
-	u >> messageLength;
+	size_t messageLength;
+	u.readRawData(reinterpret_cast<char*>(&messageLength), sizeof(size_t));
 	unsigned char *uMessage = new unsigned char[messageLength];
 	u.readRawData(reinterpret_cast<char*>(tag), 16);
 	u.readRawData(reinterpret_cast<char*>(uMessage), messageLength);

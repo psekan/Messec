@@ -46,7 +46,7 @@ public:
 	/**
 		* construcor
 		*/
-	ClientManager();
+	ClientManager(QObject *parent = 0);
 
 	/**
 	* destructor calls disconnect
@@ -104,21 +104,20 @@ public:
 	 */
 	std::vector<Messenger*> getMessengers() const;
 
-	/**
-	 * Create new request for communication with other online user.
-	 * @param std::string user name
-	 * @return bool false if user is not logged in
-	 */
-	bool startCommunicationWith(QString userName);
+protected:
 
+	void incomingConnection(qintptr handle) override;
+	
+public slots:
+	void deleteMessenger();
+	void connectionAvailable();
 
 	/**
 	* Connect client to server.
 	* @param std::string IPv4 of server
 	* @param int tcp port number of server
-	* @return bool true if connection is successfully realized.
 	*/
-	bool serverConnect(QString ip, quint16 port);
+	void serverConnect(QString ip, quint16 port);
 
 	/**
 	* Disconnect client from server.
@@ -133,37 +132,32 @@ public:
 
 	/**
 	* Get names of all online users.
-	* @return std::vector<std::string> container of users names
 	*/
 	void getOnlineUsers();
-
 	/**
-		* Sign in new user.
-		* @param std::string user name
-		* @param std::string password of user
-		* @return bool true if new user is successfully signed in
-		*/
-	bool signIn(QString userName, QString password);
+	* Sign in new user.
+	* @param std::string user name
+	* @param std::string password of user
+	*/
+	void signIn(QString userName, QString password);
 
 	/**
 	* Log in to the server with user name and password.
 	* If log in is successful, new thread is created and callbacks can be immediately executed.
 	* @param std::string user name
 	* @param std::string password of user
-	* @return bool true if user is successfully logged in
 	*/
-	bool logIn(QString userName, QString password);
+	void logIn(QString userName, QString password);
+
+	/**
+	* Create new request for communication with other online user.
+	* @param std::string user name
+	*/
+	void startCommunicationWith(QString userName);
 
 	void sendToMessenger(QString msg);
+
 	void chatEnd();
-
-protected:
-
-	void incomingConnection(qintptr handle) override;
-	
-public slots:
-	void deleteMessenger();
-	void connectionAvailable();
 
 signals:
 	void sendMsgSignal(QString msg);

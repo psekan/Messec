@@ -26,7 +26,7 @@ Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : 
 	socket = new QTcpSocket(parent);
 	QHostAddress addr(ip);
 	socket->connectToHost(addr, port);
-	std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl;
+	std::cout << "port: " << port << " ip: " << addr.toString().toStdString() << std::endl;
 	if (!socket->waitForConnected()) 
 	{
 		std::cerr << "Could not connect to |" << ip.toStdString() << "|, " << addr.toString().toStdString() << " on port |" << port << "|" << std::endl;

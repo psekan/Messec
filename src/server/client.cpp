@@ -174,6 +174,7 @@ void Client::readData()
 		break;
 	case MESSAGETYPE_CHAT_END:
 		readyToCommuinicate = true;
+		break;
 	default:
 		std::cout << "Wrong message type" << std::endl;
 	}

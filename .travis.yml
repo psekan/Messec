@@ -22,4 +22,4 @@ install:
 script:     
   - qmake QMAKE_CXX=g++-4.8 QMAKE_C=gcc-4.8 messec.pro
   - make
-  - ./src/tests/tests
+  - ./src/tests/tests ~[tcp]
