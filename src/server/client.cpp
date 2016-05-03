@@ -15,7 +15,7 @@
 #include <mbedtls/entropy.h>
 #include "crypto.h"
 
-Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false), readyToCommuinicate(true), m_inCounter(0), m_outCounter(0) {
+Client::Client(qintptr socket, QObject *parent) : QThread(parent), sock_ptr(socket), m_userName(""), m_isLoggedIn(false), m_inCounter(0), m_outCounter(0) {
 
 }
 
@@ -160,20 +160,9 @@ void Client::readData()
 		server->getOnlineUsers(this);
 		std::cout << "listing of users end" << std::endl;
 		break;
-	/*case MESSAGETYPE_SEND_PORT:
-		uMessage = reinterpret_cast<const unsigned char*>(message.toStdString().c_str());
-		memcpy(&m_clientPort, uMessage, 2);
-		std::cout << "setting client port: " << message.toStdString() << std::endl;
-		std::cout << "client port is " << m_clientPort << std::endl;
-		std::cout << "setting client port end" << std::endl;
-		//std::cout << "2 unsigned chars recieved: ";
-		//std::cout.write(reinterpret_cast<const char*>(uMessage), 2) << std::endl;
-		break;*/
+	
 	case MESSAGETYPE_GET_PARTNER:
 		server->createCommunication(this, message);
-		break;
-	case MESSAGETYPE_CHAT_END:
-		readyToCommuinicate = true;
 		break;
 	default:
 		std::cout << "Wrong message type" << std::endl;

@@ -329,19 +329,8 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 	QMutexLocker locker(&mutex);
 	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
 	{
-		if (((*it)->isLoggedIn()) && ((*it)->m_userName == userName.toStdString()) && ((*it)->readyToCommuinicate))
+		if (((*it)->isLoggedIn()) && ((*it)->m_userName == userName.toStdString()))
 		{
-			srcClient->readyToCommuinicate = false;
-			(*it)->readyToCommuinicate = false;
-			//message += QString::fromStdString((*it)->socket->peerAddress().toString().toStdString());
-			/*locker.unlock();
-			message += (*it)->clientPort;
-			message += (*it)->socket->peerAddress().toString();
-			//message += " ";
-			srcClient->sendMessage(MESSAGETYPE_PARTNER_INFO, message);
-			return;*/
-			
-
 			QByteArray array;
 			QDataStream output(&array, QIODevice::WriteOnly);
 			output << quint8(MESSAGETYPE_PARTNER_INFO);
@@ -359,7 +348,7 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 	////////////////////not encrypted send
 	QByteArray array;
 	QDataStream output(&array, QIODevice::WriteOnly);
-	output << quint8(MESSAGETYPE_PARTNER_NOT_READY);
+	output << quint8(MESSAGETYPE_PARTNER_NOT_ONLINE);
 	srcClient->socket->write(array);
 	srcClient->socket->waitForBytesWritten();
 	/////////////////////////

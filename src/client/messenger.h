@@ -21,8 +21,6 @@ class Messenger : public QThread {
 
     //Boolean values
     bool m_isAlive;
-	bool m_isSafe;
-
 
     //Connection with other client
     std::string m_userName;

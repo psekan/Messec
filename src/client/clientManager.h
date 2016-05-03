@@ -74,6 +74,14 @@ public:
 	}
 
 	/**
+	* Check if client is chatting with other client
+	* @return bool true if client is chatting
+	*/
+	bool isChatting() const {
+		return m_isChatting;
+	}
+
+	/**
 	 * Check if client is connected to server.
 	 * @return bool true if connection is available
 	 */
@@ -87,15 +95,6 @@ public:
 	 */
 	bool isLoggedIn() const {
 		return m_isLoggedIn;
-	}
-
-
-	/**
-	* Check if client is chatting with other client.
-	* @return bool true if user is chatting
-	*/
-	bool isChatting() const {
-		return m_isChatting;
 	}
 
 	/**

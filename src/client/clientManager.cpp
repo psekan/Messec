@@ -160,7 +160,6 @@ void ClientManager::disconnect() {
 		m_serverSocket->disconnectFromHost();
 		delete m_serverSocket;
 		m_serverSocket = nullptr;
-		m_isChatting = false;
 	}
 }
 
@@ -272,16 +271,11 @@ void ClientManager::deleteMessenger() {
 		std::cerr << "Messenger is null - deleteMessenger\n";
 		return;
 	}
-
-	//QMutexLocker locker(&mutex);
 	auto it = std::find(m_messengers.begin(), m_messengers.end(), msngr);
 	m_messengers.erase(it);
 	delete msngr;
 	m_isChatting = false;
-	quint8 messageType = MESSAGETYPE_CHAT_END;
-	QString messageSent = "";
-	std::cout << "chat closed" << std::endl;
-	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
+	std::cout << "Chat closed" << std::endl;
 }
 
 void ClientManager::startCommunicationWith(QString userName) {
@@ -302,20 +296,20 @@ void ClientManager::startCommunicationWith(QString userName) {
 		connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
 		connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
 		msngr->start();
+		m_messengers.push_back(msngr);
 		if (msngr->isAlive()) {
-			m_messengers.push_back(msngr);
-			std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
 			m_isChatting = true;
+			std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
 			return;
 		}
 		else {
 			std::cout << "Connection with " << userName.toStdString() << " failed" << std::endl;
-			emit disconnectClientSignal();
+			chatEnd();
 			return;
 		}
 	}
-	else if (messageType == MESSAGETYPE_PARTNER_NOT_READY)
-		std::cout << "User " << userName.toStdString() << " is not ready for communication" << std::endl;
+	else if (messageType == MESSAGETYPE_PARTNER_NOT_ONLINE)
+		std::cout << "User " << userName.toStdString() << " is not online" << std::endl;
 	else
 		std::cout << "Incoming unknown messagetype: " << messageType << std::endl;
 	return;
@@ -325,18 +319,26 @@ void ClientManager::startCommunicationWith(QString userName) {
 void ClientManager::incomingConnection(qintptr handle)
 {
 	std::cout << "Incoming connection " << std::endl;///////////////////////debug print
-	Messenger* mes = new Messenger(handle, this);
-	connect(mes, SIGNAL(finished()), this, SLOT(deleteMessenger()));
-	connect(this, SIGNAL(sendMsgSignal(QString)), mes, SLOT(sendNotCrypted(QString)));
-	connect(this, SIGNAL(disconnectClientSignal()), mes, SLOT(quitMessenger()));
-	mes->start();
-	if (mes->isAlive()) {
-		m_messengers.push_back(mes);
-		m_isChatting = true;
+	if (isChatting()) {
+		QTcpSocket* eraseSocket  = new QTcpSocket(this);
+		eraseSocket->setSocketDescriptor(handle);
+		eraseSocket->disconnect();
+		delete eraseSocket;
 	}
 	else {
-		std::cout << "Incoming connection failed" << std::endl;
-		emit disconnectClientSignal();
+		Messenger* mes = new Messenger(handle, this);
+		connect(mes, SIGNAL(finished()), this, SLOT(deleteMessenger()));
+		connect(this, SIGNAL(sendMsgSignal(QString)), mes, SLOT(sendNotCrypted(QString)));
+		connect(this, SIGNAL(disconnectClientSignal()), mes, SLOT(quitMessenger()));
+		mes->start();
+		if (mes->isAlive()) {
+			m_messengers.push_back(mes);
+			m_isChatting = true;
+		}
+		else {
+			std::cout << "Incoming connection failed" << std::endl;
+			chatEnd();
+		}
 	}
 }
 

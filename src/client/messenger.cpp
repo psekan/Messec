@@ -33,9 +33,7 @@ Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : 
 	socket->connectToHost(addr, port);
 	if (!socket->waitForConnected()) 
 	{
-		std::cerr << "Could not connect to |" << ip.toStdString() << "|, " << addr.toString().toStdString() << " on port |" << port << "|" << std::endl;
-		std::cout << "Connect failed" << std::endl;
-		delete socket;
+		std::cout << "Could not connect to " << addr.toString().toStdString() << " on port " << port << std::endl;
 	}
 	else {
 		if (!clientHandshake())
@@ -264,7 +262,6 @@ bool Messenger::serverHandshake() {
 	mbedtls_mpi_read_string(&dhm_ser.P, 16, MBEDTLS_DHM_RFC3526_MODP_2048_P);
 	mbedtls_mpi_read_string(&dhm_ser.G, 16, MBEDTLS_DHM_RFC3526_MODP_2048_G);
 	if (mbedtls_dhm_make_params(&dhm_ser, (int)mbedtls_mpi_size(&dhm_ser.P), buf_ser, &outlen_ser, mbedtls_ctr_drbg_random, &ctr_drbg_ser)) {
-		std::cout << "Diffie-Hellman failed - server, make_params" << std::endl;
 		return false;
 	}
 	
@@ -288,11 +285,9 @@ bool Messenger::serverHandshake() {
 	/////////////
 
 	if (mbedtls_dhm_read_public(&dhm_ser, buf_ser, dhm_ser.len)) {
-		std::cout << "Diffie-Hellman failed - server, read_public" << std::endl;
 		return false;
 	}
 	if (mbedtls_dhm_calc_secret(&dhm_ser, buf_ser, sizeof(buf_ser), &outlen_ser, mbedtls_ctr_drbg_random, &ctr_drbg_ser)) {
-		std::cout << "Diffie-Hellman failed - server, calc_secret" << std::endl;
 		return false;
 	}
 
@@ -332,13 +327,11 @@ bool Messenger::clientHandshake() {
 	
 	unsigned char* p = buf_cl;
 	if (mbedtls_dhm_read_params(&dhm_cl, &p, buf_cl+outlen_cl)) {
-		std::cout << "Diffie-Hellman failed - client, read_params" << std::endl;
 		return false;
 	}
 
 	outlen_cl = dhm_cl.len;
 	if (mbedtls_dhm_make_public(&dhm_cl, (int)dhm_cl.len, buf_cl, outlen_cl, mbedtls_ctr_drbg_random, &ctr_drbg_cl)) {
-		std::cout << "Diffie-Hellman failed - client, make_public" << std::endl;
 		return false;
 	}
 	
@@ -352,7 +345,6 @@ bool Messenger::clientHandshake() {
 	////////////
 
 	if (mbedtls_dhm_calc_secret(&dhm_cl, buf_cl, sizeof(buf_cl), &outlen_cl, mbedtls_ctr_drbg_random, &ctr_drbg_cl)) {
-		std::cout << "Diffie-Hellman failed - client, calc_secret" << std::endl;
 		return false;
 	}
 	mbedtls_sha512_context ctx;
