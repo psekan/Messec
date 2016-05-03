@@ -21,6 +21,8 @@ class Messenger : public QThread {
 
     //Boolean values
     bool m_isAlive;
+	bool m_isSafe;
+
 
     //Connection with other client
     std::string m_userName;
@@ -142,6 +144,19 @@ public:
 	 * @param const unsigned char* key for decryption
 	 */
 	static bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, const unsigned char* tag, const unsigned char* key);
+
+	/**
+	* setting the same key with other client through diffie-hellman, client part
+	* @param 
+	*/
+	bool Messenger::clientHandshake();
+
+	/**
+	* setting the same key with other client through diffie-hellman, server part
+	* @param
+	*/
+	bool Messenger::serverHandshake();
+
 
 public slots:
 	void readData();

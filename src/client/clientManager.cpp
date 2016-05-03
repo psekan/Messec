@@ -302,10 +302,17 @@ void ClientManager::startCommunicationWith(QString userName) {
 		connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
 		connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
 		msngr->start();
-		m_messengers.push_back(msngr);
-		std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
-		m_isChatting = true;
-		return;
+		if (msngr->isAlive()) {
+			m_messengers.push_back(msngr);
+			std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
+			m_isChatting = true;
+			return;
+		}
+		else {
+			std::cout << "Connection with " << userName.toStdString() << " failed" << std::endl;
+			emit disconnectClientSignal();
+			return;
+		}
 	}
 	else if (messageType == MESSAGETYPE_PARTNER_NOT_READY)
 		std::cout << "User " << userName.toStdString() << " is not ready for communication" << std::endl;
@@ -319,12 +326,18 @@ void ClientManager::incomingConnection(qintptr handle)
 {
 	std::cout << "Incoming connection " << std::endl;///////////////////////debug print
 	Messenger* mes = new Messenger(handle, this);
-	mes->start();
 	connect(mes, SIGNAL(finished()), this, SLOT(deleteMessenger()));
 	connect(this, SIGNAL(sendMsgSignal(QString)), mes, SLOT(sendNotCrypted(QString)));
 	connect(this, SIGNAL(disconnectClientSignal()), mes, SLOT(quitMessenger()));
-	m_messengers.push_back(mes);
-	m_isChatting = true;
+	mes->start();
+	if (mes->isAlive()) {
+		m_messengers.push_back(mes);
+		m_isChatting = true;
+	}
+	else {
+		std::cout << "Incoming connection failed" << std::endl;
+		emit disconnectClientSignal();
+	}
 }
 
 void ClientManager::sendToMessenger(QString msg) {
