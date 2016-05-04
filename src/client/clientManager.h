@@ -97,6 +97,8 @@ public:
 		return m_isLoggedIn;
 	}
 
+	void runMessenger(Messenger* msngr, bool isServer);
+		
 	/**
 	 * Get all active messengers
 	 * @return std::vector<Messenger*> container of references to messengers

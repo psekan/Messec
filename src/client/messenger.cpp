@@ -32,27 +32,14 @@ Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : 
 	QHostAddress addr(ip);
 	socket->connectToHost(addr, port);
 	if (!socket->waitForConnected()) 
-	{
 		std::cout << "Could not connect to " << addr.toString().toStdString() << " on port " << port << std::endl;
-	}
-	else {
-		if (!clientHandshake())
-			std::cout << "client handshake failed" << std::endl;
-		else
-			m_isAlive = true;
-	}
+	
 }
 
 Messenger::Messenger(qintptr socketDescriptor, QObject *parent) : QThread(parent), m_isAlive(false) {
 	socket = new QTcpSocket(parent);
 	if (!socket->setSocketDescriptor(socketDescriptor)) {
 		std::cout << "Connection failed" << std::endl;
-	}
-	else {
-			if (!serverHandshake())
-			std::cout << "server handshake failed" << std::endl;
-		else
-			m_isAlive = true;
 	}
 }
 

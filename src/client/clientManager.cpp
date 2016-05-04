@@ -292,21 +292,7 @@ void ClientManager::startCommunicationWith(QString userName) {
 		response >> port >> ip;
 		std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl; //////////////// debug print
 		Messenger* msngr = new Messenger(ip, port, userName, this);
-		connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
-		connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
-		connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
-		msngr->start();
-		m_messengers.push_back(msngr);
-		if (msngr->isAlive()) {
-			m_isChatting = true;
-			std::cout << "Connection with " << userName.toStdString() << " is ready" << std::endl;
-			return;
-		}
-		else {
-			std::cout << "Connection with " << userName.toStdString() << " failed" << std::endl;
-			chatEnd();
-			return;
-		}
+		runMessenger(msngr, false);
 	}
 	else if (messageType == MESSAGETYPE_PARTNER_NOT_ONLINE)
 		std::cout << "User " << userName.toStdString() << " is not online" << std::endl;
@@ -327,18 +313,24 @@ void ClientManager::incomingConnection(qintptr handle)
 	}
 	else {
 		Messenger* mes = new Messenger(handle, this);
-		connect(mes, SIGNAL(finished()), this, SLOT(deleteMessenger()));
-		connect(this, SIGNAL(sendMsgSignal(QString)), mes, SLOT(sendNotCrypted(QString)));
-		connect(this, SIGNAL(disconnectClientSignal()), mes, SLOT(quitMessenger()));
-		mes->start();
-		if (mes->isAlive()) {
-			m_messengers.push_back(mes);
-			m_isChatting = true;
-		}
-		else {
-			std::cout << "Incoming connection failed" << std::endl;
-			chatEnd();
-		}
+		runMessenger(mes, true);
+	}
+}
+void ClientManager::runMessenger(Messenger* msngr, bool isServer) {
+	msngr->m_isAlive = (isServer ? msngr->serverHandshake() : msngr->clientHandshake());
+
+	connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
+	connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
+	connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
+	msngr->start();
+	m_messengers.push_back(msngr);
+	if (msngr->isAlive()) {
+		m_isChatting = true;
+		std::cout << "Connection is ready" << std::endl;
+	}
+	else {
+		std::cout << "Connection failed" << std::endl;
+		chatEnd();
 	}
 }
 
