@@ -10,15 +10,15 @@
 #include <QThread>
 #include <clientManager.h>
 #include <string>
-#define  COMMAND_COUNT 11
+#define  COMMAND_COUNT 12
 
 using namespace std;
 
 class Controler : public QThread
 {
 	Q_OBJECT
-	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS, CHAT, CHATEND, SEND, HELP };
-	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users", "chat", "chatend", "send", "help" };
+	enum commandsEnum { QUIT, CONNECT, DISCONNECT, SIGNIN, LOGIN, LOGOUT, USERS, CHAT, CHATEND, SEND, FILE, HELP };
+	string commands[COMMAND_COUNT] = { "quit", "connect", "disconnect","signin", "login", "logout", "users", "chat", "chatend", "send", "file", "help" };
 	ClientManager* clientMngr;
 
 public:
@@ -35,6 +35,7 @@ public:
 		QObject::connect(this, SIGNAL(logIn(QString, QString)), manager, SLOT(logIn(QString, QString)));
 		QObject::connect(this, SIGNAL(startCommunicationWith(QString)), manager, SLOT(startCommunicationWith(QString)));
 		QObject::connect(this, SIGNAL(sendToMessenger(QString)), manager, SLOT(sendToMessenger(QString)));
+		QObject::connect(this, SIGNAL(sendFile(QString)), manager, SLOT(sendFileSlot(QString)));
 		QObject::connect(this, SIGNAL(chatEnd()), manager, SLOT(chatEnd()));
 	}
 
@@ -55,7 +56,7 @@ public:
 		int commandIndex;
 		bool runOk = true;
 
-		cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | chatend | send | help" << endl;
+		cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | chatend | send | file | help" << endl;
 		while (runOk) {
 			cin >> inCommand;
 			commandIndex = -1;
@@ -173,9 +174,9 @@ public:
 				break;
 			}
 			case SEND: {
-				if (!clientMngr->isLoggedIn())
+				if (!clientMngr->isChatting())
 				{
-					std::cout << "you are not logged in" << std::endl;
+					std::cout << "you are not chattting now" << std::endl;
 					break;
 				}
 				string msg;
@@ -183,8 +184,19 @@ public:
 				emit sendToMessenger(QString::fromStdString(msg));
 				break;
 			}
+			case FILE: {
+				if (!clientMngr->isChatting())
+				{
+					std::cout << "you are not chatting now" << std::endl;
+					break;
+				}
+				string msg;
+				getline(std::cin, msg);
+				emit sendFile(QString::fromStdString(msg).trimmed());
+				break;
+			}
 			case HELP: {
-				cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | chatend | send | help" << endl;
+				cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | chatend | send | file | help" << endl;
 				break;
 			}
 			default: {
@@ -235,6 +247,8 @@ signals:
 	void sendToMessenger(QString msg);
 
 	void chatEnd();
+
+	void sendFile(QString msg);
 };
 
 

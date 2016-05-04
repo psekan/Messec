@@ -53,7 +53,7 @@ class Messenger : public QThread {
 	*/
 	static void addToBuffer(unsigned char*&buffer, const unsigned char* data, size_t dataLength);
 
-	void saveFile(QString name, QString content);
+	void saveFile(QString name, QByteArray content);
 public:
 	//Constant
 	const static size_t MESSAGE_INFO_SIZE = 37;
@@ -161,7 +161,6 @@ public slots:
 	void sendNotCrypted(QString msg);
 	void quitMessenger(); 
 	void sendFile(QString msg);
-	void sendFileThread(QString msg);
 
 };
 

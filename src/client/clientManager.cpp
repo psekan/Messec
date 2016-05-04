@@ -43,7 +43,7 @@ bool ClientManager::handleKeyDistribution()
 	mbedtls_rsa_context *rsa = mbedtls_pk_rsa(rsa_key);
 	mbedtls_mpi_write_file("Modulus:  ", &rsa->N, 16, stdout);
 	mbedtls_mpi_write_file("Public exponent:  ", &rsa->E, 16, stdout);
-	bool answered = false;
+	//bool answered = false;
 
 	std::cout << "If you do not trust this key, close connection." << std::endl;
 
@@ -301,7 +301,6 @@ void ClientManager::startCommunicationWith(QString userName) {
 	return;
 }
 
-
 void ClientManager::incomingConnection(qintptr handle)
 {
 	std::cout << "Incoming connection " << std::endl;///////////////////////debug print
@@ -316,11 +315,13 @@ void ClientManager::incomingConnection(qintptr handle)
 		runMessenger(mes, true);
 	}
 }
+
 void ClientManager::runMessenger(Messenger* msngr, bool isServer) {
 	msngr->m_isAlive = (isServer ? msngr->serverHandshake() : msngr->clientHandshake());
 
 	connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
 	connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
+	connect(this, SIGNAL(sendFile(QString)), msngr, SLOT(sendFile(QString)));
 	connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
 	msngr->start();
 	m_messengers.push_back(msngr);
@@ -336,6 +337,11 @@ void ClientManager::runMessenger(Messenger* msngr, bool isServer) {
 
 void ClientManager::sendToMessenger(QString msg) {
 	emit sendMsgSignal(msg);
+}
+
+void ClientManager::sendFileSlot(QString msg)
+{
+	emit sendFile(msg);
 }
 
 void ClientManager::chatEnd(){	

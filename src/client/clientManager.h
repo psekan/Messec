@@ -159,9 +159,12 @@ public slots:
 
 	void chatEnd();
 
+	void sendFileSlot(QString msg);
+
 signals:
 	void sendMsgSignal(QString msg);
 	void disconnectClientSignal();
+	void sendFile(QString msg);
 
 };
 #endif //MESSEC_CLIENTMANAGER_H

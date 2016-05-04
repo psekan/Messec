@@ -11,4 +11,6 @@ const unsigned char* encryptMessage(quint8 messageType, uint32_t* coutner, const
 const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, const unsigned char* input, size_t inputLength, size_t* outputLength, unsigned char* tag, const unsigned char* key);
 void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_type, QString* message, unsigned char* m_aesKey);
 bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType, QString message, unsigned char* m_aesKey);
+bool parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_type, QByteArray& message, unsigned char* m_aesKey);
+bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType, QByteArray& message, unsigned char* m_aesKey);
 #endif //MESSEC_CRYPTO_H

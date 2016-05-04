@@ -162,3 +162,41 @@ void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_typ
 	*message = QString::fromStdString(messageString);
 	delete[] uMessage;
 }
+
+
+bool parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_type, QByteArray& message, unsigned char* m_aesKey)
+{
+	unsigned char tag[16];
+	size_t messageLength;
+	socket->read(reinterpret_cast<char*>(&messageLength), sizeof(size_t));
+	unsigned char *uMessage = new unsigned char[messageLength];
+	socket->read(reinterpret_cast<char*>(uMessage), messageLength);
+	socket->read(reinterpret_cast<char*>(tag), 16);
+
+	const unsigned char* pMessage = decryptMessage(message_type, m_inCounter, uMessage, messageLength, tag, m_aesKey);
+	if (pMessage == nullptr)
+	{
+		delete[] uMessage;
+		return false;
+	}
+	message.append(reinterpret_cast<const char *>(pMessage), messageLength - sizeof(quint8));
+	delete[] uMessage;
+	return true;
+}
+
+bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType, QByteArray& message, unsigned char* m_aesKey)
+{
+	size_t length;
+	unsigned char tag[16];
+	const unsigned char* uMessage = encryptMessage(messageType, m_outCounter, reinterpret_cast<const unsigned char*>(message.data()), message.size(), length, tag, m_aesKey);
+
+	if (uMessage == nullptr) return false;
+
+	socket->write(reinterpret_cast<const char*>(&length), sizeof(size_t));
+	socket->write(reinterpret_cast<const char*>(uMessage), length);
+	socket->write(reinterpret_cast<const char*>(tag), 16);
+	socket->waitForBytesWritten();
+	delete[] uMessage;
+
+	return true;
+}

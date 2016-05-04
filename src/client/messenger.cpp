@@ -177,29 +177,35 @@ void Messenger::addToBuffer(unsigned char*& buffer, const unsigned char* data, s
 void Messenger::readData() {
 	std::cout << "Reading data" << std::endl;
 	quint8 messageType;
-	QString message;
-	parseMessage(socket, &m_inCounter, &messageType, &message, m_aesKey);
-	QStringList list;
+	QByteArray array;
+	parseMessage(socket, &m_inCounter, &messageType, array, m_aesKey);
+	QDataStream stream(&array, QIODevice::ReadOnly);
 
-	switch (messageType) {
-	case MESSAGETYPE_MESSAGE:
+	if (messageType == MESSAGETYPE_MESSAGE) {
+		QString message;
+		stream >> message;
 		std::cout << message.toStdString() << std::endl;
-		break;
-	case MESSAGETYPE_FILE:
-		list = message.split("||##||");
-		saveFile(list[0], list[1]);
-		break;
-	default:
-		std::cout << "Unknown message type" << std::endl;
-		break;
+	} 
+	else if (messageType == MESSAGETYPE_FILE) {
+		QString fileName;
+		QByteArray bytes;
+		stream >> fileName;
+		stream >> bytes;
+		saveFile(fileName, bytes);
+	}
+	else
+	{
+		std::cout << "Unknown message type" << std::endl;	
 	}
 
 }
 
 void Messenger::sendNotCrypted(QString msg) {
-	sendMessage(socket, &m_outCounter, MESSAGETYPE_MESSAGE, msg, m_aesKey);
+	QByteArray array;
+	QDataStream stream(&array, QIODevice::WriteOnly);
+	stream << msg;
+	sendMessage(socket, &m_outCounter, MESSAGETYPE_MESSAGE, array, m_aesKey);
 }
-
 
 void Messenger::quitMessenger() {
 	exit(0);
@@ -212,26 +218,24 @@ void Messenger::sendFile(QString msg)
 		std::cout << "Cannot open file '" << msg.toStdString() << "'" << std::endl;
 		return;
 	}
-	QTextStream in(&f);
 
-	sendMessage(socket, &m_outCounter, MESSAGETYPE_FILE, msg + "||##||" + in.readAll(), m_aesKey);
+	QByteArray array;
+	QDataStream stream(&array, QIODevice::WriteOnly);
+	stream << msg;
+	stream << f.readAll();
+	sendMessage(socket, &m_outCounter, MESSAGETYPE_FILE, array, m_aesKey);
+
 	f.close();
 }
 
-void Messenger::sendFileThread(QString msg)
-{
-
-}
-
-void Messenger::saveFile(QString name, QString content)
+void Messenger::saveFile(QString name, QByteArray content)
 {
 	QFile f(name);
 	if (!f.open(QFile::WriteOnly)) {
 		std::cout << "Cannot open file '" << name.toStdString() << "'" << std::endl;
 		return;
 	}
-	QTextStream outStream(&f);
-	outStream << content;
+	f.write(content);
 	f.close();
 }
 
