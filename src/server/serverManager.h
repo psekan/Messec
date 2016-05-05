@@ -116,6 +116,13 @@ public:
 	 */
 	Client* clientConnect(qintptr socket);
 
+	/**
+	* check if user is online
+	* @param QString name of user to check
+	* @return true if client is logged in
+	*/
+	bool isOnline(QString name);
+
 protected:
 	/**
 	 * @brief incomingConnection Method is evoked when new connection is established

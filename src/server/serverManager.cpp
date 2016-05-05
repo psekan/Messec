@@ -248,7 +248,7 @@ void ServerManager::clientLogIn(QString userName, QString password, Client* clie
 		std::cerr << "Client is null - clientLogIn\n";
 		return;
 	}
-	if (userAuthentication(userName.toStdString(), password.toStdString()))
+	if (!isOnline(userName) && userAuthentication(userName.toStdString(), password.toStdString()))
 	{
 		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, "OK");
 		client->logInUser(userName.toStdString());
@@ -441,6 +441,16 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 	srcClient->socket->waitForBytesWritten();*/
 	/////////////////////////
 }
+
+bool ServerManager::isOnline(QString name) {
+	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
+	{
+		if (((*it)->isLoggedIn()) && ((*it)->m_userName == name.toStdString()))
+			return true;
+	}
+	return false;
+}
+
 
 mbedtls_pk_context ServerManager::getRSAKey() const
 {

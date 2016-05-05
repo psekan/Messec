@@ -124,6 +124,7 @@ void Client::logInUser(std::string userName) {
 
 void Client::logOutUser() {
 	m_isLoggedIn = false;
+	m_userName = "";
 }
 
 void Client::readData()
