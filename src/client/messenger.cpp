@@ -66,6 +66,22 @@ void Messenger::exitCommunication() {
 	m_isAlive = false;
 }
 
+bool Messenger::encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key)
+{
+	mbedtls_gcm_context ctx;
+	mbedtls_gcm_init(&ctx);
+	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, key, 256);
+	return !mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_GCM_ENCRYPT, inlen, iv, iv_len, nullptr, 0, input, output, 16, tag);
+}
+
+bool Messenger::decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, const unsigned char* tag, const unsigned char* key)
+{
+	mbedtls_gcm_context ctx;
+	mbedtls_gcm_init(&ctx);
+	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, /*m_aesKey*/ key, 256);
+	return !mbedtls_gcm_auth_decrypt(&ctx, inlen, iv, iv_len, nullptr, 0, tag, 16, input, output);
+}
+
 bool Messenger::sendMessageC(unsigned char messageType, size_t messageLength, const unsigned char* message) {
 	unsigned char* preparedMessageBuffer = new unsigned char[messageLength + 21];
 	if (!prepareMessageToSend(messageType, messageLength, message, preparedMessageBuffer)) {
@@ -150,22 +166,6 @@ bool Messenger::parseReceivedMessage(const unsigned char* receivedMessage, size_
 //Increase out counter
 ++m_inCounter;
 return true;
-}
-
-bool Messenger::encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key)
-{
-	mbedtls_gcm_context ctx;
-	mbedtls_gcm_init(&ctx);
-	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, /*m_aesKey*/ key, 256);
-	return !mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_GCM_ENCRYPT, inlen, iv, iv_len, nullptr, 0, input, output, TAG_SIZE, tag);
-}
-
-bool Messenger::decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, const unsigned char* tag, const unsigned char* key)
-{
-	mbedtls_gcm_context ctx;
-	mbedtls_gcm_init(&ctx);
-	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, /*m_aesKey*/ key, 256);
-	return !mbedtls_gcm_auth_decrypt(&ctx, inlen, iv, iv_len, nullptr, 0, tag, TAG_SIZE, input, output);
 }
 
 void Messenger::addToBuffer(unsigned char*& buffer, const unsigned char* data, size_t dataLength)

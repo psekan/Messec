@@ -282,14 +282,32 @@ void ClientManager::startCommunicationWith(QString userName) {
 	quint8 messageType = MESSAGETYPE_GET_PARTNER;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, userName, m_aesKey);
 
-	m_serverSocket->waitForReadyRead();
+	uint32_t responseLenght;
+	unsigned char responseLenghtAndTag[20];
 	QDataStream response(m_serverSocket);
-	response >> messageType;
+	m_serverSocket->waitForReadyRead();
+	unsigned char responseTag[16];
+	
+	response.readRawData(reinterpret_cast<char*>(responseLenghtAndTag), 20);
+	decryptLength(responseLenght, responseLenghtAndTag, responseLenghtAndTag + 4, &m_inCounter, m_aesKey);
+	
+	unsigned char *uResponse = new unsigned char[responseLenght];
+	response.readRawData(reinterpret_cast<char*>(responseTag), 16);
+	response.readRawData(reinterpret_cast<char*>(uResponse), responseLenght);
+	
+	decryptMessage(&messageType, &m_inCounter, uResponse, responseLenght, responseTag, m_aesKey);
+
 	if (messageType == MESSAGETYPE_PARTNER_INFO)
 	{
-		QString ip;
+		uint32_t lenghtForB;
+		QString ip = QString::fromStdString(std::string(reinterpret_cast<const char *>(uResponse + 64 + 4), responseLenght - 64 - 4 - 4));
 		quint16 port;
-		response >> port >> ip;
+
+		memcpy(&port, uResponse + 64, 4);
+		//memcpy(&lenghtForB, uResponse + responseLenght - 4, 4);
+		//response.readRawData(reinterpret_cast<char*>(uResponse), responseLenght);
+		// message should be send by messenger to client B
+
 		std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl; //////////////// debug print
 		Messenger* msngr = new Messenger(ip, port, userName, this);
 		runMessenger(msngr, false);

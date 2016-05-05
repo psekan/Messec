@@ -51,13 +51,13 @@ int generateRandomNumber(unsigned char* output, int output_len)
 	return result;
 }
 
-const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const unsigned char* input, size_t inputLength, size_t& outputLength, unsigned char* tag, const unsigned char* key)
+const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const unsigned char* input, uint32_t inputLength, size_t& outputLength, unsigned char* tag, const unsigned char* key)
 {
 	(*counter)++;
 	unsigned char uCounter[4];
 	unsigned char output[64];
 	unsigned char IV[16];
-	size_t sizeOfMessageType = sizeof(quint8);
+	uint32_t sizeOfMessageType = sizeof(quint8);
 	outputLength = inputLength + sizeOfMessageType;
     unsigned char* preparedMessageBuffer = new unsigned char[outputLength];
 	unsigned char* encryptedMessage = new unsigned char[outputLength];
@@ -85,13 +85,13 @@ const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const
 	return nullptr;
 }
 
-const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, const unsigned char* input, size_t inputLength, unsigned char* tag, const unsigned char* key)
+const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, const unsigned char* input, uint32_t inputLength, unsigned char* tag, const unsigned char* key)
 {
 	(*counter)++;
 	unsigned char uCounter[4];
 	unsigned char output[64];
 	unsigned char IV[16];
-	size_t sizeOfMessageType = sizeof(quint8);
+	uint32_t sizeOfMessageType = sizeof(quint8);
 	//*outputLength = inputLength - sizeOfMessageType;
 	unsigned char* decryptedMessage = new unsigned char[inputLength + 8];
 
@@ -120,17 +120,23 @@ bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType,
 	QByteArray array;
 	QDataStream output(&array, QIODevice::WriteOnly);
 
-	size_t length;
+	uint32_t length;
 	unsigned char tag[16];
+	
+	(*m_outCounter)++;  // we can parse message in right order easier, message counter should be one more than lenght
 	const unsigned char* uMessage = encryptMessage(messageType, m_outCounter, reinterpret_cast<const unsigned char*>(message.toStdString().c_str()), message.length(), length, tag, m_aesKey);
+	(*m_outCounter) -= 2;
+	unsigned char encryptedLengthAndTag[20];
+	bool result = encryptLength(length, encryptedLengthAndTag, encryptedLengthAndTag + 4, m_outCounter, m_aesKey);
+	(*m_outCounter) ++;
 
-	if (uMessage == nullptr)
+	if (uMessage == nullptr || !result)
 	{
 		std::cout << "encryption failed" << std::endl;
 		return false;
 	}
 
-	output.writeRawData(reinterpret_cast<const char*>(&length), sizeof(size_t));
+	output.writeRawData(reinterpret_cast<const char*>(encryptedLengthAndTag), 20);
 	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
 	output.writeRawData(reinterpret_cast<const char*>(uMessage), length);
 	socket->write(array);
@@ -144,14 +150,19 @@ void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_typ
 {
 	QDataStream u(socket);
 	unsigned char tag[16];
-	size_t messageLength;
-	u.readRawData(reinterpret_cast<char*>(&messageLength), sizeof(size_t));
+	unsigned char encryptedLengthAndTag[20];
+	uint32_t messageLength;
+	
+	u.readRawData(reinterpret_cast<char*>(encryptedLengthAndTag), 20);
+	
+	bool result = decryptLength(messageLength, encryptedLengthAndTag, encryptedLengthAndTag + 4, m_inCounter, m_aesKey);
 	unsigned char *uMessage = new unsigned char[messageLength];
+	
 	u.readRawData(reinterpret_cast<char*>(tag), 16);
 	u.readRawData(reinterpret_cast<char*>(uMessage), messageLength);
 
 	const unsigned char* pMessage = decryptMessage(message_type, m_inCounter, uMessage, messageLength, tag, m_aesKey);
-	if (pMessage == nullptr)
+	if (pMessage == nullptr || !result)
 	{
 		std::cout << "decryption fail" << std::endl;
 		delete[] uMessage;
@@ -199,4 +210,48 @@ bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType,
 	delete[] uMessage;
 
 	return true;
+}
+
+bool encryptLength(uint32_t lenght, unsigned char* output, unsigned char *tag, uint32_t* counter, unsigned char* m_aesKey)
+{
+	(*counter)++;
+	unsigned char uCounter[4];
+	unsigned char shaOutput[64];
+	unsigned char IV[16];
+	unsigned char input[4];
+
+	memcpy(input, &lenght, 4);
+
+	memcpy(uCounter, counter, 4);
+	mbedtls_sha512(uCounter, 4, shaOutput, 0);
+	memcpy(IV, shaOutput, 16);
+
+	if(encrypt(input, 4, output, IV, 16, tag, m_aesKey))
+	{
+		return true;
+	}
+	(*counter)--;
+	return false;
+}
+
+bool decryptLength(uint32_t& lenght, unsigned char* input, unsigned char *tag, uint32_t* counter, unsigned char* m_aesKey)
+{
+	(*counter)++;
+	unsigned char uCounter[4];
+	unsigned char shaOutput[64];
+	unsigned char IV[16];
+
+	memcpy(uCounter, counter, 4);
+	mbedtls_sha512(uCounter, 4, shaOutput, 0);
+	memcpy(IV, shaOutput, 16);
+
+
+	unsigned char output[12]; // 4 for data and 8 reserve for function
+	if(decrypt(input, 4, output, IV, 16, tag, m_aesKey))
+	{
+		memcpy(&lenght, output, 4);
+		return true;
+	}
+	(*counter)--;
+	return false;
 }

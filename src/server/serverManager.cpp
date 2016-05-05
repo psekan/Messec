@@ -325,32 +325,84 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		std::cerr << "Client is null - createCommunication\n";
 		return;
 	}
+	MessageTypes message_typeA = MESSAGETYPE_PARTNER_INFO;
+	MessageTypes message_typeB = MESSAGETYPE_COMUNICATION_INIT;
 	QString message;
+	QHostAddress ip;
+	quint16 port;
+	unsigned char bAES[32];
+	bool found = false;
+
 	QMutexLocker locker(&mutex);
 	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
 	{
 		if (((*it)->isLoggedIn()) && ((*it)->m_userName == userName.toStdString()))
 		{
-			QByteArray array;
-			QDataStream output(&array, QIODevice::WriteOnly);
-			output << quint8(MESSAGETYPE_PARTNER_INFO);
-			output << (*it)->m_clientPort;
-			output << (*it)->socket->peerAddress().toString();
-
-			srcClient->socket->write(array);
-			srcClient->socket->waitForBytesWritten();
-			return;
+			port = (*it)->m_clientPort;
+			ip = (*it)->socket->peerAddress().toString();
+			memcpy(bAES, (*it)->m_aesKey, 32);
+			found = true;
+			break;
 		}
 	}
 	locker.unlock();
+
+	if (found) {
+		// Prepare structure of Message for user B
+		uint32_t counter = 0;
+		char const *aName = srcClient->m_userName.c_str();
+		unsigned char *dataForB = new unsigned char[64 + strlen(aName)];
+
+		generateRandomNumber(dataForB, 64);          // 2 32byte random numbers           
+		memcpy(dataForB + 64, aName, strlen(aName));   // name of A
+
+		uint32_t dataBoutputLength;
+		uint32_t dataAoutputLength;
+		unsigned char encryptedLenghtAndTagB[20];
+		unsigned char encryptedLenghtAndTagA[20];
+		unsigned char tagDataB[16];
+		unsigned char tagDataA[16];
+
+		const unsigned char* dataToSendB = encryptMessage(MESSAGETYPE_COMUNICATION_INIT, &counter, dataForB, 64 + strlen(aName), dataBoutputLength, tagDataB, bAES);  // encrypt dara for B
+		counter = 0;
+		encryptLength(dataBoutputLength, encryptedLenghtAndTagB, encryptedLenghtAndTagB + 4, &counter, bAES);
+
+		// Prepare structure of Message for user A
+
+		counter = 0;
+		char const *bIP = ip.toString().toStdString().c_str();
+
+		unsigned char *dataForA = new unsigned char[64 + 4 + strlen(bIP) + 4]; // 2 32byte random numbers + port + ip + size for B
+
+		memcpy(dataForA, dataForB, 64);   // copy the numbers
+		memcpy(dataForA + 64, &port, 4);  // copy port
+		memcpy(dataForA + 64 + 4, bIP, strlen(bIP)); // copy IP
+		memcpy(dataForA + 64 + 4 + strlen(bIP), &dataBoutputLength, 4); // copy size of message to B
+
+		srcClient->m_outCounter++;
+		const unsigned char* dataToSendA = encryptMessage(MESSAGETYPE_PARTNER_INFO, &srcClient->m_outCounter, dataForA, 64 + 4 + strlen(bIP) + 4, dataAoutputLength, tagDataA, srcClient->m_aesKey);  // encrypt dara for B
+		srcClient->m_outCounter -= 2;
+		encryptLength(dataAoutputLength, encryptedLenghtAndTagA, encryptedLenghtAndTagA, &counter, srcClient->m_aesKey);
+		srcClient->m_outCounter++;
+
+		QByteArray array;
+		QDataStream output(&array, QIODevice::WriteOnly);
+		output.writeRawData(reinterpret_cast<const char*>(encryptedLenghtAndTagA), 20);
+		output.writeRawData(reinterpret_cast<const char*>(dataToSendA), dataAoutputLength);
+		output.writeRawData(reinterpret_cast<const char*>(encryptedLenghtAndTagB), 20);
+		output.writeRawData(reinterpret_cast<const char*>(dataToSendB), dataAoutputLength);
+		srcClient->socket->write(array);
+		srcClient->socket->waitForBytesWritten();
+		return;
+	}
+	
 	message = "";
-	//srcClient->sendMessage(MESSAGETYPE_PARTNER_NOT_READY, message); //right send
-	////////////////////not encrypted send
-	QByteArray array;
+	srcClient->sendMessage(MESSAGETYPE_PARTNER_NOT_ONLINE, message);
+	/*QByteArray array;
 	QDataStream output(&array, QIODevice::WriteOnly);
 	output << quint8(MESSAGETYPE_PARTNER_NOT_ONLINE);
 	srcClient->socket->write(array);
-	srcClient->socket->waitForBytesWritten();
+	srcClient->socket->waitForBytesWritten();*/
 	/////////////////////////
 }
 
