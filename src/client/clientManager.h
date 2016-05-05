@@ -25,6 +25,8 @@ class ClientManager : public QTcpServer {
 	bool m_isLoggedIn;
 	bool m_isChatting;
 
+	// name of logged in user
+	std::string m_myName;
 	//Connection with server
 	QTcpSocket* m_serverSocket;
 	QTcpSocket* m_peerSocket; ///////////////////////////////socket with other user

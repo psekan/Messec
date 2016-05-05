@@ -43,29 +43,8 @@ bool ClientManager::handleKeyDistribution()
 	mbedtls_rsa_context *rsa = mbedtls_pk_rsa(rsa_key);
 	mbedtls_mpi_write_file("Modulus:  ", &rsa->N, 16, stdout);
 	mbedtls_mpi_write_file("Public exponent:  ", &rsa->E, 16, stdout);
-	//bool answered = false;
 
 	std::cout << "If you do not trust this key, close connection." << std::endl;
-
-	/*while (!answered)
-	{
-		char answer = getchar();
-		switch (answer)
-		{
-		case 'y':
-			answered = true;
-			getchar();
-			break;
-		case 'n':
-			getchar();
-			return false;
-		case '\n':
-			break;
-		default: std::cout << "please type 'y' if you do or 'n' if you dont" << std::endl;
-			getchar();
-			break;
-		}
-	}*/
 
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
@@ -179,6 +158,8 @@ void ClientManager::signIn(QString userName, QString password) {
 	if (messageType == MESSAGETYPE_SIGNIN_SUCCESS)
 	{
 		std::cout << "successful" << std::endl;
+		m_isLoggedIn = true;
+		m_myName = userName.toStdString();
 		return;
 	}
 	else if (messageType == MESSAGETYPE_SIGNIN_FAIL)
@@ -210,6 +191,7 @@ void ClientManager::logIn(QString userName, QString password) {
 	{
 		std::cout << "successful" << std::endl;
 		m_isLoggedIn = true;
+		m_myName = userName.toStdString();
 		return;
 	}
 	else if (messageType == MESSAGETYPE_LOGIN_FAIL)
@@ -230,6 +212,7 @@ void ClientManager::logOut() {
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
 	std::cout << "you are now logged off" << std::endl;
 	m_isLoggedIn = false;
+	m_myName = "";
 }
 
 void ClientManager::getOnlineUsers() {
@@ -279,6 +262,11 @@ void ClientManager::deleteMessenger() {
 }
 
 void ClientManager::startCommunicationWith(QString userName) {
+	if (m_myName == userName.toStdString()) {
+		std::cout << "You dont need chat to talk with yourself" << std::endl;
+		return;
+	}
+
 	quint8 messageType = MESSAGETYPE_GET_PARTNER;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, userName, m_aesKey);
 
