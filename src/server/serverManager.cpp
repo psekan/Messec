@@ -364,35 +364,71 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		unsigned char tagDataA[16];
 
 		const unsigned char* dataToSendB = encryptMessage(MESSAGETYPE_COMUNICATION_INIT, &counter, dataForB, 64 + strlen(aName), dataBoutputLength, tagDataB, bAES);  // encrypt dara for B
+		
+		if(dataToSendB == nullptr)
+		{
+			std::cout << "encrypt of data to B failed" << std::endl;
+			return; 
+		}
+		
 		counter = 0;
-		encryptLength(dataBoutputLength, encryptedLenghtAndTagB, encryptedLenghtAndTagB + 4, &counter, bAES);
+		
+		if(!encryptLength(dataBoutputLength, encryptedLenghtAndTagB, encryptedLenghtAndTagB + 4, &counter, bAES))
+		{
+			std::cout << "encrypt of lenght to B failed" << std::endl;
+			return;
+		}
 
 		// Prepare structure of Message for user A
-
 		counter = 0;
-		char const *bIP = ip.toString().toStdString().c_str();
+		std::string ipString = ip.toString().toStdString(); 
+		char const *bIPc = ipString.c_str();
+		unsigned char const *bIP = reinterpret_cast<unsigned char const*>(bIPc);
 
-		unsigned char *dataForA = new unsigned char[64 + 4 + strlen(bIP) + 4]; // 2 32byte random numbers + port + ip + size for B
+		dataBoutputLength += 16; // plus tag - to tell to A how many bytes are there for B... need to substract later for another work!
+
+		unsigned char *dataForA = new unsigned char[64 + 4 + strlen(bIPc) + 4]; // 2 32byte random numbers + port + ip + size for B
 
 		memcpy(dataForA, dataForB, 64);   // copy the numbers
 		memcpy(dataForA + 64, &port, 4);  // copy port
-		memcpy(dataForA + 64 + 4, bIP, strlen(bIP)); // copy IP
-		memcpy(dataForA + 64 + 4 + strlen(bIP), &dataBoutputLength, 4); // copy size of message to B
+		memcpy(dataForA + 64 + 4, bIP, strlen(bIPc)); // copy IP
+		memcpy(dataForA + 64 + 4 + strlen(bIPc), &dataBoutputLength, 4); // copy size of message to B
+		
+		dataBoutputLength -= 16;
+		srcClient->m_outCounter++;
+		const unsigned char* dataToSendA = encryptMessage(MESSAGETYPE_PARTNER_INFO, &srcClient->m_outCounter, dataForA, 64 + 4 + strlen(bIPc) + 4, dataAoutputLength, tagDataA, srcClient->m_aesKey);  // encrypt dara for A
+		
+		if (dataToSendB == nullptr)
+		{
+			std::cout << "encrypt of data to A failed" << std::endl;
+			return;
+		}
 
-		srcClient->m_outCounter++;
-		const unsigned char* dataToSendA = encryptMessage(MESSAGETYPE_PARTNER_INFO, &srcClient->m_outCounter, dataForA, 64 + 4 + strlen(bIP) + 4, dataAoutputLength, tagDataA, srcClient->m_aesKey);  // encrypt dara for B
 		srcClient->m_outCounter -= 2;
-		encryptLength(dataAoutputLength, encryptedLenghtAndTagA, encryptedLenghtAndTagA, &counter, srcClient->m_aesKey);
+		if(!encryptLength(dataAoutputLength, encryptedLenghtAndTagA, encryptedLenghtAndTagA + 4, &srcClient->m_outCounter, srcClient->m_aesKey))
+		{
+			std::cout << "encrypt of lenght to A failed" << std::endl;
+			return;
+		}
 		srcClient->m_outCounter++;
+
+		std::cout << "sending data of lenght: " << dataAoutputLength << std::endl;
 
 		QByteArray array;
 		QDataStream output(&array, QIODevice::WriteOnly);
 		output.writeRawData(reinterpret_cast<const char*>(encryptedLenghtAndTagA), 20);
+		output.writeRawData(reinterpret_cast<const char*>(tagDataA), 16);
 		output.writeRawData(reinterpret_cast<const char*>(dataToSendA), dataAoutputLength);
 		output.writeRawData(reinterpret_cast<const char*>(encryptedLenghtAndTagB), 20);
+		output.writeRawData(reinterpret_cast<const char*>(tagDataB), 16);
 		output.writeRawData(reinterpret_cast<const char*>(dataToSendB), dataAoutputLength);
 		srcClient->socket->write(array);
 		srcClient->socket->waitForBytesWritten();
+
+		delete[] dataToSendA;
+		delete[] dataToSendB;
+		delete[] dataForA;
+		delete[] dataForB;
 		return;
 	}
 	

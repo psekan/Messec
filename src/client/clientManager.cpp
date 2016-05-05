@@ -289,24 +289,43 @@ void ClientManager::startCommunicationWith(QString userName) {
 	unsigned char responseTag[16];
 	
 	response.readRawData(reinterpret_cast<char*>(responseLenghtAndTag), 20);
-	decryptLength(responseLenght, responseLenghtAndTag, responseLenghtAndTag + 4, &m_inCounter, m_aesKey);
+	
+	if(!decryptLength(responseLenght, responseLenghtAndTag, responseLenghtAndTag + 4, &m_inCounter, m_aesKey))
+	{
+		std::cout << "decrypt of lenght failed" << std::endl;
+		return;
+	}
+
+	std::cout << "recieved data of lenght: " << responseLenght << std::endl;
 	
 	unsigned char *uResponse = new unsigned char[responseLenght];
 	response.readRawData(reinterpret_cast<char*>(responseTag), 16);
 	response.readRawData(reinterpret_cast<char*>(uResponse), responseLenght);
 	
-	decryptMessage(&messageType, &m_inCounter, uResponse, responseLenght, responseTag, m_aesKey);
+	const unsigned char *decryptedResponse = decryptMessage(&messageType, &m_inCounter, uResponse, responseLenght, responseTag, m_aesKey);
+	responseLenght -= sizeof(quint8); // - messagetype
+
+	if(decryptedResponse == nullptr)
+	{
+		std::cout << "decrypt of message failed" << std::endl;
+		return;
+	}
 
 	if (messageType == MESSAGETYPE_PARTNER_INFO)
 	{
+		std::cout << "parent info arrived" << std::endl;
 		uint32_t lenghtForB;
-		QString ip = QString::fromStdString(std::string(reinterpret_cast<const char *>(uResponse + 64 + 4), responseLenght - 64 - 4 - 4));
+		std::string ipString = std::string(reinterpret_cast<const char *>(decryptedResponse + 64 + 4), responseLenght - 64 - 4 - 4);
+
+		QString ip = QString::fromStdString(ipString);
 		quint16 port;
 
-		memcpy(&port, uResponse + 64, 4);
-		//memcpy(&lenghtForB, uResponse + responseLenght - 4, 4);
-		//response.readRawData(reinterpret_cast<char*>(uResponse), responseLenght);
-		// message should be send by messenger to client B
+		memcpy(&port, decryptedResponse + 64, 4);
+		memcpy(&lenghtForB, decryptedResponse + responseLenght - 4, 4);
+		response.readRawData(reinterpret_cast<char*>(uResponse), responseLenght);
+		// message should be send by messenger to client B, here is deleted because next parts of protocol arent implemented yet
+		delete[] uResponse;
+		delete[] (decryptedResponse - sizeof(quint8));
 
 		std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl; //////////////// debug print
 		Messenger* msngr = new Messenger(ip, port, userName, this);
@@ -316,7 +335,6 @@ void ClientManager::startCommunicationWith(QString userName) {
 		std::cout << "User " << userName.toStdString() << " is not online" << std::endl;
 	else
 		std::cout << "Incoming unknown messagetype: " << messageType << std::endl;
-	return;
 }
 
 void ClientManager::incomingConnection(qintptr handle)
