@@ -31,6 +31,10 @@ class Messenger : public QThread {
 	uint32_t m_outCounter;
 	qintptr sock_ptr;
 	QTcpSocket *socket;
+
+	//Buffer for reading
+	size_t m_messageLength = 0;
+	QByteArray m_readingBuffer;
 	
     //Access for ClientManager
     friend class ClientManager;

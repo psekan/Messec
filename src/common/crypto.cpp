@@ -178,14 +178,14 @@ void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_typ
 }
 
 
-bool parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_type, QByteArray& message, unsigned char* m_aesKey)
+bool parseMessage(QByteArray &input, uint32_t* m_inCounter, quint8* message_type, QByteArray& message, unsigned char* m_aesKey)
 {
 	unsigned char tag[16];
-	size_t messageLength;
-	socket->read(reinterpret_cast<char*>(&messageLength), sizeof(size_t));
+	size_t messageLength = input.size() - 16;
+	QDataStream socket(&input, QIODevice::ReadOnly);
 	unsigned char *uMessage = new unsigned char[messageLength];
-	socket->read(reinterpret_cast<char*>(uMessage), messageLength);
-	socket->read(reinterpret_cast<char*>(tag), 16);
+	socket.readRawData(reinterpret_cast<char*>(uMessage), messageLength);
+	socket.readRawData(reinterpret_cast<char*>(tag), 16);
 
 	const unsigned char* pMessage = decryptMessage(message_type, m_inCounter, uMessage, messageLength, tag, m_aesKey);
 	if (pMessage == nullptr)
@@ -209,6 +209,7 @@ bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType,
 	socket->write(reinterpret_cast<const char*>(&length), sizeof(size_t));
 	socket->write(reinterpret_cast<const char*>(uMessage), length);
 	socket->write(reinterpret_cast<const char*>(tag), 16);
+
 	socket->waitForBytesWritten();
 	delete[] uMessage;
 

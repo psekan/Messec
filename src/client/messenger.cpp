@@ -175,29 +175,44 @@ void Messenger::addToBuffer(unsigned char*& buffer, const unsigned char* data, s
 }
 
 void Messenger::readData() {
-	std::cout << "Reading data" << std::endl;
-	quint8 messageType;
-	QByteArray array;
-	parseMessage(socket, &m_inCounter, &messageType, array, m_aesKey);
-	QDataStream stream(&array, QIODevice::ReadOnly);
-
-	if (messageType == MESSAGETYPE_MESSAGE) {
-		QString message;
-		stream >> message;
-		std::cout << message.toStdString() << std::endl;
-	} 
-	else if (messageType == MESSAGETYPE_FILE) {
-		QString fileName;
-		QByteArray bytes;
-		stream >> fileName;
-		stream >> bytes;
-		saveFile(fileName, bytes);
+	if (m_messageLength == 0) {
+		std::cout << "Reading data" << std::endl;
+		socket->read(reinterpret_cast<char*>(&m_messageLength), sizeof(size_t));
+		m_messageLength += TAG_SIZE; //need to read also tag to buffer for parse
 	}
-	else
+
+	char *uMessage = new char[m_messageLength];
+	qint64 readLength = socket->read(uMessage, m_messageLength);
+	m_readingBuffer.append(uMessage, readLength);
+	delete[] uMessage;
+	
+	if (m_readingBuffer.size() == m_messageLength)
 	{
-		std::cout << "Unknown message type" << std::endl;	
-	}
+		quint8 messageType;
+		QByteArray array;
+		parseMessage(m_readingBuffer, &m_inCounter, &messageType, array, m_aesKey);
+		QDataStream stream(&array, QIODevice::ReadOnly);
 
+		if (messageType == MESSAGETYPE_MESSAGE) {
+			QString message;
+			stream >> message;
+			std::cout << message.toStdString() << std::endl;
+		}
+		else if (messageType == MESSAGETYPE_FILE) {
+			QString fileName;
+			QByteArray bytes;
+			stream >> fileName;
+			stream >> bytes;
+			saveFile(fileName, bytes);
+		}
+		else
+		{
+			std::cout << "Unknown message type" << std::endl;
+		}
+
+		m_readingBuffer.clear();
+		m_messageLength = 0;
+	}
 }
 
 void Messenger::sendNotCrypted(QString msg) {
