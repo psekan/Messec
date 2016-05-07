@@ -11,7 +11,7 @@ const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const
 const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, const unsigned char* input, uint32_t inputLength, unsigned char* tag, const unsigned char* key);
 void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_type, QString* message, unsigned char* m_aesKey);
 bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType, QString message, unsigned char* m_aesKey);
-bool parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_type, QByteArray& message, unsigned char* m_aesKey);
+bool parseMessage(QByteArray& input, uint32_t* m_inCounter, quint8* message_type, QByteArray& message, unsigned char* m_aesKey);
 bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType, QByteArray& message, unsigned char* m_aesKey);
 bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, unsigned char* tag, const unsigned char* key);
 bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, const unsigned char* tag, const unsigned char* key);

@@ -47,7 +47,7 @@ Messenger::Messenger(QString ip, quint16 port, QString name, unsigned char* data
 	
 }
 
-Messenger::Messenger(qintptr socketDescriptor, QObject *parent) : QThread(parent), m_isAlive(false) {
+Messenger::Messenger(qintptr socketDescriptor, QObject *parent, unsigned char* clientMngrAes) : QThread(parent), m_isAlive(false), m_clientMngrAes(clientMngrAes) {
 	socket = new QTcpSocket(parent);
 	if (!socket->setSocketDescriptor(socketDescriptor)) {
 		std::cout << "Connection failed" << std::endl;
@@ -186,29 +186,44 @@ void Messenger::addToBuffer(unsigned char*& buffer, const unsigned char* data, s
 }
 
 void Messenger::readData() {
-	std::cout << "Reading data" << std::endl;
-	quint8 messageType;
-	QByteArray array;
-	parseMessage(socket, &m_inCounter, &messageType, array, m_aesKey);
-	QDataStream stream(&array, QIODevice::ReadOnly);
-
-	if (messageType == MESSAGETYPE_MESSAGE) {
-		QString message;
-		stream >> message;
-		std::cout << message.toStdString() << std::endl;
-	} 
-	else if (messageType == MESSAGETYPE_FILE) {
-		QString fileName;
-		QByteArray bytes;
-		stream >> fileName;
-		stream >> bytes;
-		saveFile(fileName, bytes);
+	if (m_messageLength == 0) {
+		std::cout << "Reading data" << std::endl;
+		socket->read(reinterpret_cast<char*>(&m_messageLength), sizeof(size_t));
+		m_messageLength += TAG_SIZE; //need to read also tag to buffer for parse
 	}
-	else
+
+	char *uMessage = new char[m_messageLength];
+	qint64 readLength = socket->read(uMessage, m_messageLength);
+	m_readingBuffer.append(uMessage, readLength);
+	delete[] uMessage;
+	
+	if (m_readingBuffer.size() == m_messageLength)
 	{
-		std::cout << "Unknown message type" << std::endl;	
-	}
+		quint8 messageType;
+		QByteArray array;
+		parseMessage(m_readingBuffer, &m_inCounter, &messageType, array, m_aesKey);
+		QDataStream stream(&array, QIODevice::ReadOnly);
 
+		if (messageType == MESSAGETYPE_MESSAGE) {
+			QString message;
+			stream >> message;
+			std::cout << message.toStdString() << std::endl;
+		}
+		else if (messageType == MESSAGETYPE_FILE) {
+			QString fileName;
+			QByteArray bytes;
+			stream >> fileName;
+			stream >> bytes;
+			saveFile(fileName, bytes);
+		}
+		else
+		{
+			std::cout << "Unknown message type" << std::endl;
+		}
+
+		m_readingBuffer.clear();
+		m_messageLength = 0;
+	}
 }
 
 void Messenger::sendNotCrypted(QString msg) {
@@ -262,25 +277,23 @@ bool Messenger::serverHandshake() {
 
 	intit.readRawData(reinterpret_cast<char*>(intitLenghtAndTag), 20);
 
-	if (!decryptLength(intitLenght, intitLenghtAndTag, intitLenghtAndTag + 4, &counter, m_aesKey))
+	if (!decryptLength(intitLenght, intitLenghtAndTag, intitLenghtAndTag + 4, &counter, m_clientMngrAes))
 	{
-		std::cout << "decrypt of lenght failed" << std::endl;
+		std::cout << "decrypt of data from server lenght failed" << std::endl;
 		return false;
 	}
-
-	std::cout << "recieved data of lenght: " << intitLenght << std::endl;
 
 	unsigned char *uResponse = new unsigned char[intitLenght];
 	intit.readRawData(reinterpret_cast<char*>(intitTag), 16);
 	intit.readRawData(reinterpret_cast<char*>(uResponse), intitLenght);
 
 	counter = 0;
-	const unsigned char *decryptedIntit = decryptMessage(&messageType, &counter, uResponse, intitLenght, intitTag, m_aesKey);
+	const unsigned char *decryptedIntit = decryptMessage(&messageType, &counter, uResponse, intitLenght, intitTag, m_clientMngrAes);
 	intitLenght -= sizeof(quint8); // - messagetype
 
 	if (decryptedIntit == nullptr)
 	{
-		std::cout << "decrypt of message failed" << std::endl;
+		std::cout << "decrypt of of data from server failed" << std::endl;
 		return false;
 	}
 
@@ -309,10 +322,12 @@ bool Messenger::serverHandshake() {
 		}
 
 		//encrypt and send buf_ser of length outlen_ser
+		counter = 0;
 		unsigned char tag[16];
-		const unsigned char* encryptedDH = encryptMessage(MESSAGETYPE_DIFFIE_HELMAN, 0, buf_ser, outlen_ser, outlen_ser, tag, m_randomNumbers);
+		const unsigned char* encryptedDH = encryptMessage(MESSAGETYPE_DIFFIE_HELMAN, &counter, buf_ser, outlen_ser, outlen_ser, tag, m_randomNumbers);
 		unsigned char encryptedLenghtAndTag[20];
-		encryptLength(outlen_ser, encryptedLenghtAndTag, encryptedLenghtAndTag + 4, 0, m_randomNumbers);
+		counter = 0;
+		encryptLength(outlen_ser, encryptedLenghtAndTag, encryptedLenghtAndTag + 4, &counter, m_randomNumbers);
 
 		QByteArray array;
 		QDataStream output(&array, QIODevice::WriteOnly);
@@ -343,20 +358,18 @@ bool Messenger::serverHandshake() {
 
 		intit.readRawData(reinterpret_cast<char*>(DHLenghtAndTag), 20);
 
-		if (!decryptLength(DHLenght, DHLenghtAndTag, DHLenghtAndTag + 4, &counter, m_aesKey))
+		if (!decryptLength(DHLenght, DHLenghtAndTag, DHLenghtAndTag + 4, &counter, m_randomNumbers))
 		{
 			std::cout << "decrypt of DH lenght failed" << std::endl;
 			return false;
 		}
-
-		std::cout << "recieved data of lenght: " << DHLenght << std::endl;
 
 		unsigned char *uDH = new unsigned char[DHLenght];
 		intit.readRawData(reinterpret_cast<char*>(DHTag), 16);
 		intit.readRawData(reinterpret_cast<char*>(uDH), DHLenght);
 
 		counter = 0;
-		const unsigned char *decryptedDH = decryptMessage(&messageType, &counter, uDH, DHLenght, DHTag, m_aesKey);
+		const unsigned char *decryptedDH = decryptMessage(&messageType, &counter, uDH, DHLenght, DHTag, m_randomNumbers);
 		DHLenght -= sizeof(quint8); // - messagetype
 
 		if (decryptedDH == nullptr)
@@ -365,7 +378,7 @@ bool Messenger::serverHandshake() {
 			return false;
 		}
 
-		if(messageType == MESSAGETYPE_DIFFIE_HELMAN)
+		if(messageType != MESSAGETYPE_DIFFIE_HELMAN)
 		{
 			std::cout << "DIFIE HELMAN ended before completed - wrong recieved data" << std::endl;
 			return false;
@@ -429,39 +442,34 @@ bool Messenger::clientHandshake() {
 
 	DH.readRawData(reinterpret_cast<char*>(DHLenghtAndTag), 20);
 
-	if (!decryptLength(DHLenght, DHLenghtAndTag, DHLenghtAndTag + 4, &counter, m_aesKey))
+	if (!decryptLength(DHLenght, DHLenghtAndTag, DHLenghtAndTag + 4, &counter, m_randomNumbers))
 	{
 		std::cout << "decrypt of DH lenght failed" << std::endl;
 		return false;
 	}
 
-	std::cout << "recieved data of lenght: " << DHLenght << std::endl;
-
 	unsigned char *uDH = new unsigned char[DHLenght];
 	DH.readRawData(reinterpret_cast<char*>(DHTag), 16);
 	DH.readRawData(reinterpret_cast<char*>(uDH), DHLenght);
-
 	counter = 0;
-	const unsigned char *decryptedDH = decryptMessage(&messageType, &counter, uDH, DHLenght, DHTag, m_aesKey);
+	const unsigned char *decryptedDH = decryptMessage(&messageType, &counter, uDH, DHLenght, DHTag, m_randomNumbers);
 	DHLenght -= sizeof(quint8); // - messagetype
-
 	if (decryptedDH == nullptr)
 	{
 		std::cout << "decrypt of DH failed" << std::endl;
 		return false;
 	}
 
-	if (messageType == MESSAGETYPE_DIFFIE_HELMAN)
+	if (messageType != MESSAGETYPE_DIFFIE_HELMAN)
 	{
 		std::cout << "DIFIE HELMAN ended before completed - wrong recieved data" << std::endl;
 		return false;
 	}
-
 	memcpy(buf_cl, decryptedDH, DHLenght);
 	/////////////
 	
 	unsigned char* p = buf_cl;
-	if (mbedtls_dhm_read_params(&dhm_cl, &p, buf_cl+outlen_cl)) {
+	if (mbedtls_dhm_read_params(&dhm_cl, &p, buf_cl + DHLenght)) {
 		return false;
 	}
 
@@ -478,10 +486,14 @@ bool Messenger::clientHandshake() {
 	socket->write(array);
 	socket->waitForBytesWritten();*/
 
+	counter = 0;
 	unsigned char tag[16];
-	const unsigned char* encryptedDH = encryptMessage(MESSAGETYPE_DIFFIE_HELMAN, 0, buf_cl, outlen_cl, outlen_cl, tag, m_randomNumbers);
+	std::cout << "c" << std::endl;
+	const unsigned char* encryptedDH = encryptMessage(MESSAGETYPE_DIFFIE_HELMAN, &counter, buf_cl, outlen_cl, outlen_cl, tag, m_randomNumbers);
 	unsigned char encryptedLenghtAndTag[20];
-	encryptLength(outlen_cl, encryptedLenghtAndTag, encryptedLenghtAndTag + 4, 0, m_randomNumbers);
+	counter = 0;
+	std::cout << "d" << std::endl;
+	encryptLength(outlen_cl, encryptedLenghtAndTag, encryptedLenghtAndTag + 4, &counter, m_randomNumbers);
 
 	QByteArray array;
 	QDataStream output(&array, QIODevice::WriteOnly);

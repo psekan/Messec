@@ -31,14 +31,16 @@ class Messenger : public QThread {
 	uint32_t m_outCounter;
 	qintptr sock_ptr;
 	QTcpSocket *socket;
+<<<<<<< HEAD
 	unsigned char m_randomNumbers[64];
-	unsigned char* m_clientMngrAes; // pointer to AES key between client and server
+=======
 
-    //Buffer for reading
+	//Buffer for reading
 	size_t m_messageLength = 0;
 	QByteArray m_readingBuffer;
+>>>>>>> fa996933bb8f4ec055bd1a69a2a4b41bc6259919
 	
-	//Access for ClientManager
+    //Access for ClientManager
     friend class ClientManager;
 
 	//Constants
@@ -70,7 +72,7 @@ public:
 
 	Messenger(QString ip, quint16 port, QString name, unsigned char* dataToSendB, quint32 dataLenght, unsigned char* randomNumbers, QObject *parent);
 
-	Messenger(qintptr SocketDescriptor, QObject *parent, unsigned char* clientMngrAes);
+	Messenger(qintptr SocketDescriptor, QObject *parent);
 
 	/**
 	* Constructor for ClientManager.

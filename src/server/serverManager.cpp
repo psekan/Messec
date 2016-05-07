@@ -385,7 +385,7 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		char const *bIPc = ipString.c_str();
 		unsigned char const *bIP = reinterpret_cast<unsigned char const*>(bIPc);
 
-		dataBoutputLength += 16; // plus tag - to tell to A how many bytes are there for B... need to substract later for another work!
+		dataBoutputLength += 16 + 20; // plus tag and lenght iwth tag - to tell to A how many bytes are there for B... need to substract later for another work!
 
 		unsigned char *dataForA = new unsigned char[64 + 4 + strlen(bIPc) + 4]; // 2 32byte random numbers + port + ip + size for B
 
@@ -394,7 +394,7 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		memcpy(dataForA + 64 + 4, bIP, strlen(bIPc)); // copy IP
 		memcpy(dataForA + 64 + 4 + strlen(bIPc), &dataBoutputLength, 4); // copy size of message to B
 		
-		dataBoutputLength -= 16;
+		dataBoutputLength -= 36;
 		srcClient->m_outCounter++;
 		const unsigned char* dataToSendA = encryptMessage(MESSAGETYPE_PARTNER_INFO, &srcClient->m_outCounter, dataForA, 64 + 4 + strlen(bIPc) + 4, dataAoutputLength, tagDataA, srcClient->m_aesKey);  // encrypt dara for A
 		
@@ -412,8 +412,6 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		}
 		srcClient->m_outCounter++;
 
-		std::cout << "sending data of lenght: " << dataAoutputLength << std::endl;
-
 		QByteArray array;
 		QDataStream output(&array, QIODevice::WriteOnly);
 		output.writeRawData(reinterpret_cast<const char*>(encryptedLenghtAndTagA), 20);
@@ -421,7 +419,7 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		output.writeRawData(reinterpret_cast<const char*>(dataToSendA), dataAoutputLength);
 		output.writeRawData(reinterpret_cast<const char*>(encryptedLenghtAndTagB), 20);
 		output.writeRawData(reinterpret_cast<const char*>(tagDataB), 16);
-		output.writeRawData(reinterpret_cast<const char*>(dataToSendB), dataAoutputLength);
+		output.writeRawData(reinterpret_cast<const char*>(dataToSendB), dataBoutputLength);
 		srcClient->socket->write(array);
 		srcClient->socket->waitForBytesWritten();
 

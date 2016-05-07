@@ -338,7 +338,7 @@ void ClientManager::incomingConnection(qintptr handle)
 		delete eraseSocket;
 	}
 	else {
-		Messenger* mes = new Messenger(handle, this);
+		Messenger* mes = new Messenger(handle, this, m_aesKey);
 		runMessenger(mes, true);
 	}
 }
