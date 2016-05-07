@@ -27,12 +27,23 @@ Messenger::Messenger(std::string userName, unsigned int socket, unsigned char ae
 	m_isAlive = true;
 }
 
-Messenger::Messenger(QString ip, quint16 port, QString name, QObject *parent) : QThread(parent), m_isAlive(false){
+Messenger::Messenger(QString ip, quint16 port, QString name, unsigned char* dataToSendB, quint32 dataLenght, unsigned char * randomNumbers, QObject *parent) : QThread(parent), m_isAlive(false){
 	socket = new QTcpSocket(parent);
 	QHostAddress addr(ip);
 	socket->connectToHost(addr, port);
-	if (!socket->waitForConnected()) 
+	if (!socket->waitForConnected()) {
 		std::cout << "Could not connect to " << addr.toString().toStdString() << " on port " << port << std::endl;
+	}
+	else
+	{
+		memcpy(m_randomNumbers, randomNumbers, 64);
+		QByteArray array;
+		QDataStream output(&array, QIODevice::WriteOnly);
+		output.writeRawData(reinterpret_cast<const char*>(dataToSendB), dataLenght);
+		socket->write(array);
+		socket->waitForBytesWritten();
+		delete[] dataToSendB;
+	}
 	
 }
 
@@ -240,60 +251,153 @@ void Messenger::saveFile(QString name, QByteArray content)
 }
 
 bool Messenger::serverHandshake() {
-	unsigned char buf_ser[2048];
-	size_t outlen_ser;
-	mbedtls_dhm_context dhm_ser;
-	mbedtls_dhm_init(&dhm_ser);
-	mbedtls_entropy_context entropy_ser;
-	mbedtls_ctr_drbg_context ctr_drbg_ser;
-	const char *personalization_ser = "server_personalization_of_random_generator_for_Diffie-Hellman ";
 
-	initRandomContexts(entropy_ser, ctr_drbg_ser);
-	mbedtls_ctr_drbg_seed(&ctr_drbg_ser, mbedtls_entropy_func, &entropy_ser, reinterpret_cast<const unsigned char *>(personalization_ser), strlen(personalization_ser));
-	mbedtls_mpi_read_string(&dhm_ser.P, 16, MBEDTLS_DHM_RFC3526_MODP_2048_P);
-	mbedtls_mpi_read_string(&dhm_ser.G, 16, MBEDTLS_DHM_RFC3526_MODP_2048_G);
-	if (mbedtls_dhm_make_params(&dhm_ser, (int)mbedtls_mpi_size(&dhm_ser.P), buf_ser, &outlen_ser, mbedtls_ctr_drbg_random, &ctr_drbg_ser)) {
-		return false;
-	}
-	
-	//send buf_ser of length outlen_ser
-	QByteArray array;
-	QDataStream output(&array, QIODevice::WriteOnly);
-	output.writeRawData(reinterpret_cast<const char*>(&outlen_ser), sizeof(size_t));
-	output.writeRawData(reinterpret_cast<const char*>(buf_ser), outlen_ser);
-	socket->write(array);
-	socket->waitForBytesWritten();
-	///////////
-
-	memset(buf_ser, 0, sizeof(buf_ser));
-
-	//receive clients buf_cl to buf_ser
 	socket->waitForReadyRead();
-	QDataStream mySocket(socket);
-	size_t messageLength;
-	mySocket.readRawData(reinterpret_cast<char*>(&messageLength), sizeof(size_t));
-	mySocket.readRawData(reinterpret_cast<char*>(buf_ser), messageLength);
-	/////////////
+	uint32_t counter = 0;
+	quint8 messageType;
+	uint32_t intitLenght;
+	unsigned char intitLenghtAndTag[20];
+	QDataStream intit(socket);
+	unsigned char intitTag[16];
 
-	if (mbedtls_dhm_read_public(&dhm_ser, buf_ser, dhm_ser.len)) {
+	intit.readRawData(reinterpret_cast<char*>(intitLenghtAndTag), 20);
+
+	if (!decryptLength(intitLenght, intitLenghtAndTag, intitLenghtAndTag + 4, &counter, m_aesKey))
+	{
+		std::cout << "decrypt of lenght failed" << std::endl;
 		return false;
 	}
-	if (mbedtls_dhm_calc_secret(&dhm_ser, buf_ser, sizeof(buf_ser), &outlen_ser, mbedtls_ctr_drbg_random, &ctr_drbg_ser)) {
+
+	std::cout << "recieved data of lenght: " << intitLenght << std::endl;
+
+	unsigned char *uResponse = new unsigned char[intitLenght];
+	intit.readRawData(reinterpret_cast<char*>(intitTag), 16);
+	intit.readRawData(reinterpret_cast<char*>(uResponse), intitLenght);
+
+	counter = 0;
+	const unsigned char *decryptedIntit = decryptMessage(&messageType, &counter, uResponse, intitLenght, intitTag, m_aesKey);
+	intitLenght -= sizeof(quint8); // - messagetype
+
+	if (decryptedIntit == nullptr)
+	{
+		std::cout << "decrypt of message failed" << std::endl;
 		return false;
 	}
 
-	mbedtls_sha512_context ctx;
-	unsigned char hash[64];
-	mbedtls_sha512_init(&ctx);
-	mbedtls_sha512(reinterpret_cast<const unsigned char*>(buf_ser), outlen_ser, hash, 0);
-	memcpy(m_aesKey, hash, 32);
-	mbedtls_sha512_free(&ctx);
-	mbedtls_dhm_free(&dhm_ser);
+	if (messageType == MESSAGETYPE_COMUNICATION_INIT) {
 
-	std::cout << "aes messenger key: ";							//////////////////////////////////debug print
-	std::cout.write(reinterpret_cast<const char*>(m_aesKey), 32); 
-	std::cout << std::endl;
-	return true;
+		std::cout << "comunication is being initialized" << std::endl;
+		unsigned char const* uNameFromServer = decryptedIntit + 1 + 64;
+		memcpy(m_randomNumbers, decryptedIntit, 64);
+
+
+		// DIFIE HELLMAN
+		unsigned char buf_ser[2048];
+		size_t outlen_ser;
+		mbedtls_dhm_context dhm_ser;
+		mbedtls_dhm_init(&dhm_ser);
+		mbedtls_entropy_context entropy_ser;
+		mbedtls_ctr_drbg_context ctr_drbg_ser;
+		const char *personalization_ser = "server_personalization_of_random_generator_for_Diffie-Hellman ";
+
+		initRandomContexts(entropy_ser, ctr_drbg_ser);
+		mbedtls_ctr_drbg_seed(&ctr_drbg_ser, mbedtls_entropy_func, &entropy_ser, reinterpret_cast<const unsigned char *>(personalization_ser), strlen(personalization_ser));
+		mbedtls_mpi_read_string(&dhm_ser.P, 16, MBEDTLS_DHM_RFC3526_MODP_2048_P);
+		mbedtls_mpi_read_string(&dhm_ser.G, 16, MBEDTLS_DHM_RFC3526_MODP_2048_G);
+		if (mbedtls_dhm_make_params(&dhm_ser, (int)mbedtls_mpi_size(&dhm_ser.P), buf_ser, &outlen_ser, mbedtls_ctr_drbg_random, &ctr_drbg_ser)) {
+			return false;
+		}
+
+		//encrypt and send buf_ser of length outlen_ser
+		unsigned char tag[16];
+		const unsigned char* encryptedDH = encryptMessage(MESSAGETYPE_DIFFIE_HELMAN, 0, buf_ser, outlen_ser, outlen_ser, tag, m_randomNumbers);
+		unsigned char encryptedLenghtAndTag[20];
+		encryptLength(outlen_ser, encryptedLenghtAndTag, encryptedLenghtAndTag + 4, 0, m_randomNumbers);
+
+		QByteArray array;
+		QDataStream output(&array, QIODevice::WriteOnly);
+		output.writeRawData(reinterpret_cast<const char*>(encryptedLenghtAndTag), 20);
+		output.writeRawData(reinterpret_cast<const char*>(tag), 16);
+		output.writeRawData(reinterpret_cast<const char*>(encryptedDH), outlen_ser);
+		socket->write(array);
+		socket->waitForBytesWritten();
+
+		delete[] encryptedDH;
+		///////////
+
+		memset(buf_ser, 0, sizeof(buf_ser));
+
+		//receive and decrypt clients buf_cl to buf_ser
+		
+		/*socket->waitForReadyRead();
+		QDataStream mySocket(socket);
+		size_t messageLength;
+		mySocket.readRawData(reinterpret_cast<char*>(&messageLength), sizeof(size_t));
+		mySocket.readRawData(reinterpret_cast<char*>(buf_ser), messageLength);*/
+
+		socket->waitForReadyRead();
+		counter = 0;
+		uint32_t DHLenght;
+		unsigned char DHLenghtAndTag[20];
+		unsigned char DHTag[16];
+
+		intit.readRawData(reinterpret_cast<char*>(DHLenghtAndTag), 20);
+
+		if (!decryptLength(DHLenght, DHLenghtAndTag, DHLenghtAndTag + 4, &counter, m_aesKey))
+		{
+			std::cout << "decrypt of DH lenght failed" << std::endl;
+			return false;
+		}
+
+		std::cout << "recieved data of lenght: " << DHLenght << std::endl;
+
+		unsigned char *uDH = new unsigned char[DHLenght];
+		intit.readRawData(reinterpret_cast<char*>(DHTag), 16);
+		intit.readRawData(reinterpret_cast<char*>(uDH), DHLenght);
+
+		counter = 0;
+		const unsigned char *decryptedDH = decryptMessage(&messageType, &counter, uDH, DHLenght, DHTag, m_aesKey);
+		DHLenght -= sizeof(quint8); // - messagetype
+
+		if (decryptedDH == nullptr)
+		{
+			std::cout << "decrypt of DH failed" << std::endl;
+			return false;
+		}
+
+		if(messageType == MESSAGETYPE_DIFFIE_HELMAN)
+		{
+			std::cout << "DIFIE HELMAN ended before completed - wrong recieved data" << std::endl;
+			return false;
+		}
+ 
+		memcpy(buf_ser, decryptedDH, DHLenght);
+		/////////////
+
+
+		if (mbedtls_dhm_read_public(&dhm_ser, buf_ser, dhm_ser.len)) {
+			return false;
+		}
+		if (mbedtls_dhm_calc_secret(&dhm_ser, buf_ser, sizeof(buf_ser), &outlen_ser, mbedtls_ctr_drbg_random, &ctr_drbg_ser)) {
+			return false;
+		}
+
+		mbedtls_sha512_context ctx;
+		unsigned char hash[64];
+		mbedtls_sha512_init(&ctx);
+		mbedtls_sha512(reinterpret_cast<const unsigned char*>(buf_ser), outlen_ser, hash, 0);
+		memcpy(m_aesKey, hash, 32);
+		mbedtls_sha512_free(&ctx);
+		mbedtls_dhm_free(&dhm_ser);
+
+		std::cout << "aes messenger key: ";							//////////////////////////////////debug print
+		std::cout.write(reinterpret_cast<const char*>(m_aesKey), 32);
+		std::cout << std::endl;
+		return true;
+	}
+
+	std::cout << "unknow data was recieved";
+	return false;
 }
 
 
@@ -310,10 +414,50 @@ bool Messenger::clientHandshake() {
 	mbedtls_ctr_drbg_seed(&ctr_drbg_cl, mbedtls_entropy_func, &entropy_cl, reinterpret_cast<const unsigned char *>(personalization_cl), strlen(personalization_cl));
 	
 	//read to buf_cl and len to outlen_cl
-	socket->waitForReadyRead();
+	/*socket->waitForReadyRead();
 	QDataStream mySocket(socket);
 	mySocket.readRawData(reinterpret_cast<char*>(&outlen_cl), sizeof(size_t));
-	mySocket.readRawData(reinterpret_cast<char*>(buf_cl), outlen_cl);
+	mySocket.readRawData(reinterpret_cast<char*>(buf_cl), outlen_cl);*/    
+
+	socket->waitForReadyRead();
+	uint32_t counter = 0;
+	uint32_t DHLenght;
+	unsigned char DHLenghtAndTag[20];
+	unsigned char DHTag[16];
+	QDataStream DH(socket);
+	uint8_t messageType;
+
+	DH.readRawData(reinterpret_cast<char*>(DHLenghtAndTag), 20);
+
+	if (!decryptLength(DHLenght, DHLenghtAndTag, DHLenghtAndTag + 4, &counter, m_aesKey))
+	{
+		std::cout << "decrypt of DH lenght failed" << std::endl;
+		return false;
+	}
+
+	std::cout << "recieved data of lenght: " << DHLenght << std::endl;
+
+	unsigned char *uDH = new unsigned char[DHLenght];
+	DH.readRawData(reinterpret_cast<char*>(DHTag), 16);
+	DH.readRawData(reinterpret_cast<char*>(uDH), DHLenght);
+
+	counter = 0;
+	const unsigned char *decryptedDH = decryptMessage(&messageType, &counter, uDH, DHLenght, DHTag, m_aesKey);
+	DHLenght -= sizeof(quint8); // - messagetype
+
+	if (decryptedDH == nullptr)
+	{
+		std::cout << "decrypt of DH failed" << std::endl;
+		return false;
+	}
+
+	if (messageType == MESSAGETYPE_DIFFIE_HELMAN)
+	{
+		std::cout << "DIFIE HELMAN ended before completed - wrong recieved data" << std::endl;
+		return false;
+	}
+
+	memcpy(buf_cl, decryptedDH, DHLenght);
 	/////////////
 	
 	unsigned char* p = buf_cl;
@@ -327,12 +471,28 @@ bool Messenger::clientHandshake() {
 	}
 	
 	//send buf_cl
-	QByteArray array;
+	/*QByteArray array;
 	QDataStream output(&array, QIODevice::WriteOnly);
 	output.writeRawData(reinterpret_cast<const char*>(&outlen_cl), sizeof(size_t));
 	output.writeRawData(reinterpret_cast<const char*>(buf_cl), outlen_cl);
 	socket->write(array);
+	socket->waitForBytesWritten();*/
+
+	unsigned char tag[16];
+	const unsigned char* encryptedDH = encryptMessage(MESSAGETYPE_DIFFIE_HELMAN, 0, buf_cl, outlen_cl, outlen_cl, tag, m_randomNumbers);
+	unsigned char encryptedLenghtAndTag[20];
+	encryptLength(outlen_cl, encryptedLenghtAndTag, encryptedLenghtAndTag + 4, 0, m_randomNumbers);
+
+	QByteArray array;
+	QDataStream output(&array, QIODevice::WriteOnly);
+	output.writeRawData(reinterpret_cast<const char*>(encryptedLenghtAndTag), 20);
+	output.writeRawData(reinterpret_cast<const char*>(tag), 16);
+	output.writeRawData(reinterpret_cast<const char*>(encryptedDH), outlen_cl);
+	socket->write(array);
 	socket->waitForBytesWritten();
+
+	delete[] encryptedDH;
+
 	////////////
 
 	if (mbedtls_dhm_calc_secret(&dhm_cl, buf_cl, sizeof(buf_cl), &outlen_cl, mbedtls_ctr_drbg_random, &ctr_drbg_cl)) {

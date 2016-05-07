@@ -307,16 +307,19 @@ void ClientManager::startCommunicationWith(QString userName) {
 
 		QString ip = QString::fromStdString(ipString);
 		quint16 port;
-
+		unsigned char randomNumbers[64];
 		memcpy(&port, decryptedResponse + 64, 4);
 		memcpy(&lenghtForB, decryptedResponse + responseLenght - 4, 4);
-		response.readRawData(reinterpret_cast<char*>(uResponse), responseLenght);
+		memcpy(randomNumbers, decryptedResponse, 64);
+
+		unsigned char *dataToB = new unsigned char[lenghtForB];
+		response.readRawData(reinterpret_cast<char*>(dataToB), lenghtForB);
 		// message should be send by messenger to client B, here is deleted because next parts of protocol arent implemented yet
 		delete[] uResponse;
 		delete[] (decryptedResponse - sizeof(quint8));
 
 		std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl; //////////////// debug print
-		Messenger* msngr = new Messenger(ip, port, userName, this);
+		Messenger* msngr = new Messenger(ip, port, userName, dataToB, lenghtForB, randomNumbers, this);
 		runMessenger(msngr, false);
 	}
 	else if (messageType == MESSAGETYPE_PARTNER_NOT_ONLINE)

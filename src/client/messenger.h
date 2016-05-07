@@ -31,6 +31,7 @@ class Messenger : public QThread {
 	uint32_t m_outCounter;
 	qintptr sock_ptr;
 	QTcpSocket *socket;
+	unsigned char m_randomNumbers[64];
 	
     //Access for ClientManager
     friend class ClientManager;
@@ -62,7 +63,7 @@ public:
 
 	void run() override;
 
-	Messenger(QString ip, quint16 port, QString name, QObject *parent);
+	Messenger(QString ip, quint16 port, QString name, unsigned char* dataToSendB, quint32 dataLenght, unsigned char* randomNumbers, QObject *parent);
 
 	Messenger(qintptr SocketDescriptor, QObject *parent);
 
