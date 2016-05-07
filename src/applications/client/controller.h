@@ -158,6 +158,11 @@ public:
 					std::cout << "you are not logged in" << std::endl;
 					break;
 				}
+				if (clientMngr->isChatting())
+				{
+					std::cout << "you are already chatting" << std::endl;
+					break;
+				}
 				string partner;
 				cout << "Name: ";
 				cin >> partner;
@@ -179,7 +184,7 @@ public:
 					std::cout << "you are not chattting now" << std::endl;
 					break;
 				}
-				string msg;
+				string msg; 
 				getline(std::cin, msg);
 				emit sendToMessenger(QString::fromStdString(msg));
 				break;
