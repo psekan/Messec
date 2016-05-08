@@ -45,9 +45,10 @@ class ClientManager : public QTcpServer {
 
 public:
 	bool handleKeyDistribution();
+	
 	/**
-		* construcor
-		*/
+	* construcor
+	*/
 	ClientManager(QObject *parent = 0);
 
 	/**

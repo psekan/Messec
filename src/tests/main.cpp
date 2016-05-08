@@ -198,6 +198,7 @@ TEST_CASE("Server tests", "[server_test][tcp]") {
 	}
 }
 
+/*
 TEST_CASE("Encryption_Decryption","[ende]") {
 	SECTION("input == dec(enc(input))") {
 		const unsigned char input[30] = { 'T','h','i','s','_','i','s','_','m','y','_','s','u','p','e','r','_','t','e','s','t','_','m','e','s','s','a','g','e','!' };
@@ -313,6 +314,7 @@ TEST_CASE("Encryption_Decryption","[ende]") {
 		CHECK(!Messenger::decrypt(cryptotext, 64, plaintext2, iv, 12, tag, key));
 	}
 }
+*/
 /*
 TEST_CASE("Send/Receive message") {
 	SECTION("send and receive") {

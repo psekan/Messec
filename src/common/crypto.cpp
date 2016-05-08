@@ -20,7 +20,7 @@ bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, 
 {
 	mbedtls_gcm_context ctx;
 	mbedtls_gcm_init(&ctx);
-	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, /*m_aesKey*/ key, 256);
+	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, key, 256);
 	return !mbedtls_gcm_auth_decrypt(&ctx, inlen, iv, iv_len, nullptr, 0, tag, 16, input, output);
 }
 
@@ -71,12 +71,6 @@ const unsigned char* encryptMessage(quint8 messageType, uint32_t* counter, const
 
 	if(encrypt(preparedMessageBuffer, outputLength, encryptedMessage, IV, 16, tag, key))
 	{
-		/*std::cout << "....................................." << std::endl;
-		std::cout << "sending lenght: " << outputLength << std::endl << " counter: " << *counter << std::endl << " sending tag: " << std::endl;
-		std::cout.write(reinterpret_cast<char*>(tag), 16) << " sending message: ";
-		std::cout.write(reinterpret_cast<const char*>(encryptedMessage), outputLength) << std::endl;
-		std::cout << "initialization vector is: ";
-		std::cout.write(reinterpret_cast<char*>(IV), 16) << std::endl;*/
 		delete[] preparedMessageBuffer;
 		return encryptedMessage;
 	}
@@ -93,20 +87,12 @@ const unsigned char* decryptMessage(quint8* messageType, uint32_t* counter, cons
 	unsigned char output[64];
 	unsigned char IV[16];
 	uint32_t sizeOfMessageType = sizeof(quint8);
-	//*outputLength = inputLength - sizeOfMessageType;
 	unsigned char* decryptedMessage = new unsigned char[inputLength + 8];
 
 	memcpy(uCounter, counter, 4);
 	mbedtls_sha512(uCounter, 4, output, 0);
 	memcpy(IV, output, 16);
 
-	/*std::cout << "....................................." << std::endl;
-	std::cout << "recieved lenght: " << inputLength << std::endl << " counter: " << *counter << std::endl << " recieved tag: ";
-	std::cout.write(reinterpret_cast<char*>(tag), 16) << " recieved message: ";
-	std::cout.write(reinterpret_cast<const char*>(input), inputLength) << std::endl;
-	std::cout << "initialization vector is: ";
-	std::cout.write(reinterpret_cast<char*>(IV), 16) << std::endl;*/
-	
 	if(decrypt(input, inputLength, decryptedMessage, IV, 16, tag, key))
 	{
 		memcpy(messageType, decryptedMessage, sizeOfMessageType);
@@ -170,7 +156,6 @@ void parseMessage(QTcpSocket* socket, uint32_t* m_inCounter, quint8* message_typ
 		delete[] uMessage;
 		return;
 	}
-	//uMessage[messageLengt] = '\0';
 	std::string messageString = std::string(reinterpret_cast<const char *>(pMessage), messageLength - sizeof(quint8));
 	*message = QString::fromStdString(messageString);
 	delete[] uMessage;
@@ -232,10 +217,6 @@ bool encryptLength(uint32_t lenght, unsigned char* output, unsigned char *tag, u
 
 	if(encrypt(input, 4, output, IV, 16, tag, m_aesKey))
 	{
-		/*std::cout << "....................................." << std::endl;
-		std::cout << " counter: " << *counter << std::endl << " sending tag: ";
-		std::cout.write(reinterpret_cast<char*>(tag), 16) << std::endl << " sending message: ";
-		std::cout.write(reinterpret_cast<const char*>(output), 4) << std::endl;*/
 		return true;
 	}
 	(*counter)--;
@@ -248,11 +229,6 @@ bool decryptLength(uint32_t& lenght, unsigned char* input, unsigned char *tag, u
 	unsigned char uCounter[4];
 	unsigned char shaOutput[64];
 	unsigned char IV[16];
-
-	/*std::cout << "....................................." << std::endl;
-	std::cout << " counter: " << *counter << std::endl << " recieved tag: ";
-	std::cout.write(reinterpret_cast<char*>(tag), 16) << std::endl << " recieved message: ";
-	std::cout.write(reinterpret_cast<const char*>(input), 4) << std::endl;*/
 
 	memcpy(uCounter, counter, 4);
 	mbedtls_sha512(uCounter, 4, shaOutput, 0);

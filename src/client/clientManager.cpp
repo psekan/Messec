@@ -61,13 +61,6 @@ bool ClientManager::handleKeyDistribution()
 		return false;
 	}
 
-
-	std::cout << "sending aes key: ";
-	std::cout.write(reinterpret_cast<char*>(m_aesKey), 32);
-	std::cout << std::endl;
-
-	std::cout << "sending port: " << m_clientPort << std::endl;
-
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
 	str << quint64(length);
@@ -105,7 +98,6 @@ void ClientManager::start() {
 	else
 	{
 		setPort(serverPort());
-		std::cout << "success on port " << m_clientPort << std::endl; ////////////////////////debug print
 	}
 }
 
@@ -116,7 +108,6 @@ void ClientManager::serverConnect(QString ip, quint16 port) {
 	m_serverSocket->connectToHost(addr, port);
 	if (!m_serverSocket->waitForConnected()) {
 		std::cerr << "Could not connect to " << ip.toStdString() << ", " << addr.toString().toStdString() << std::endl;
-		std::cout << "Connect failed" << std::endl;
 		return;
 	}
 
@@ -134,6 +125,8 @@ void ClientManager::serverConnect(QString ip, quint16 port) {
 void ClientManager::disconnect() {
 	if (m_serverSocket != nullptr)
 	{
+		if (isChatting())
+			chatEnd();
 		m_isLoggedIn = false;
 		m_isConnected = false;
 		m_serverSocket->disconnectFromHost();
@@ -143,11 +136,13 @@ void ClientManager::disconnect() {
 }
 
 void ClientManager::signIn(QString userName, QString password) {
+	if (password.length() < 8) {
+		std::cout << "Password has to be at least 8 characters long" << std::endl;
+		return;
+	}
 	quint8 messageType = MESSAGETYPE_SIGNIN;
 	QString messageSent = QString::fromStdString(userName.toStdString()) + "|#|" + QString::fromStdString(password.toStdString());
-	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
-	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
 	QString messageRec;
@@ -176,16 +171,13 @@ void ClientManager::signIn(QString userName, QString password) {
 void ClientManager::logIn(QString userName, QString password) {
 	quint8 messageType = MESSAGETYPE_LOGIN;
 	QString messageSent = userName + "|#|" + password;
-	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
-	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
 	QString messageRec;
 	parseMessage(m_serverSocket, &m_inCounter, &messageType, &messageRec, m_aesKey);
 
 	std::cout << "log in ";
-	std::cout << messageRec.toStdString() << std::endl;
 
 	if (messageType == MESSAGETYPE_LOGIN_SUCCESS)
 	{
@@ -208,19 +200,18 @@ void ClientManager::logIn(QString userName, QString password) {
 void ClientManager::logOut() {
 	quint8 messageType = MESSAGETYPE_LOGOUT;
 	QString messageSent = "";
-	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
-	std::cout << "you are now logged off" << std::endl;
 	m_isLoggedIn = false;
 	m_myName = "";
+	std::cout << "you are now logged out" << std::endl;
+	if (isChatting())
+		chatEnd();
 }
 
 void ClientManager::getOnlineUsers() {
 	quint8 messageType = MESSAGETYPE_GET_ONLINE_USERS;
 	QString messageSent = "";
-	std::cout << "sending data to server" << std::endl;
 	sendMessage(m_serverSocket, &m_outCounter, messageType, messageSent, m_aesKey);
-	std::cout << "waiting for response" << std::endl;
 	m_serverSocket->waitForReadyRead();
 
 	QString messageRec;
@@ -282,10 +273,7 @@ void ClientManager::startCommunicationWith(QString userName) {
 	{
 		std::cout << "decrypt of lenght failed" << std::endl;
 		return;
-	}
-
-	std::cout << "recieved data of lenght: " << responseLenght << std::endl;
-	
+	}	
 	unsigned char *uResponse = new unsigned char[responseLenght];
 	response.readRawData(reinterpret_cast<char*>(responseTag), 16);
 	response.readRawData(reinterpret_cast<char*>(uResponse), responseLenght);
@@ -301,7 +289,6 @@ void ClientManager::startCommunicationWith(QString userName) {
 
 	if (messageType == MESSAGETYPE_PARTNER_INFO)
 	{
-		std::cout << "parent info arrived" << std::endl;
 		uint32_t lenghtForB;
 		std::string ipString = std::string(reinterpret_cast<const char *>(decryptedResponse + 64 + 4), responseLenght - 64 - 4 - 4);
 
@@ -318,19 +305,18 @@ void ClientManager::startCommunicationWith(QString userName) {
 		delete[] uResponse;
 		delete[] (decryptedResponse - sizeof(quint8));
 
-		std::cout << "port: " << port << " ip: " << ip.toStdString() << std::endl; //////////////// debug print
-		Messenger* msngr = new Messenger(ip, port, userName, dataToB, lenghtForB, randomNumbers, this);
+		Messenger* msngr = new Messenger(ip, port, dataToB, lenghtForB, randomNumbers, this);
 		runMessenger(msngr, false);
 	}
-	else if (messageType == MESSAGETYPE_PARTNER_NOT_ONLINE)
-		std::cout << "User " << userName.toStdString() << " is not online" << std::endl;
+	else if (messageType == MESSAGETYPE_PARTNER_NOT_ONLINE) {
+		std::cout << "Partner is not online" << messageType << std::endl;
+	}
 	else
 		std::cout << "Incoming unknown messagetype: " << messageType << std::endl;
 }
 
 void ClientManager::incomingConnection(qintptr handle)
 {
-	std::cout << "Incoming connection " << std::endl;///////////////////////debug print
 	if (isChatting()) {
 		QTcpSocket* eraseSocket  = new QTcpSocket(this);
 		eraseSocket->setSocketDescriptor(handle);
@@ -347,7 +333,7 @@ void ClientManager::runMessenger(Messenger* msngr, bool isServer) {
 	msngr->m_isAlive = (isServer ? msngr->serverHandshake() : msngr->clientHandshake());
 
 	connect(msngr, SIGNAL(finished()), this, SLOT(deleteMessenger()));
-	connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendNotCrypted(QString)));
+	connect(this, SIGNAL(sendMsgSignal(QString)), msngr, SLOT(sendEncrypted(QString)));
 	connect(this, SIGNAL(sendFile(QString)), msngr, SLOT(sendFile(QString)));
 	connect(this, SIGNAL(disconnectClientSignal()), msngr, SLOT(quitMessenger()));
 	msngr->start();

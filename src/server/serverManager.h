@@ -23,7 +23,6 @@ class ServerManager : public QTcpServer
 	Q_OBJECT
 	quint16 port;
 	
-    unsigned int m_socket;
     mbedtls_pk_context m_rsaKey;
     std::vector<Client*> m_clients;
 	Database m_database;
