@@ -204,18 +204,11 @@ bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType,
 bool encryptLength(uint32_t lenght, unsigned char* output, unsigned char *tag, uint32_t* counter, unsigned char* m_aesKey)
 {
 	(*counter)++;
-	unsigned char uCounter[4];
 	unsigned char shaOutput[64];
-	unsigned char IV[16];
-	unsigned char input[4];
+	
+	mbedtls_sha512(reinterpret_cast<unsigned char*>(counter), 4, shaOutput, 0);
 
-	memcpy(input, &lenght, 4);
-
-	memcpy(uCounter, counter, 4);
-	mbedtls_sha512(uCounter, 4, shaOutput, 0);
-	memcpy(IV, shaOutput, 16);
-
-	if(encrypt(input, 4, output, IV, 16, tag, m_aesKey))
+	if(encrypt(reinterpret_cast<unsigned char*>(&lenght), 4, output, shaOutput, 16, tag, m_aesKey))
 	{
 		return true;
 	}
@@ -226,17 +219,12 @@ bool encryptLength(uint32_t lenght, unsigned char* output, unsigned char *tag, u
 bool decryptLength(uint32_t& lenght, unsigned char* input, unsigned char *tag, uint32_t* counter, unsigned char* m_aesKey)
 {
 	(*counter)++;
-	unsigned char uCounter[4];
 	unsigned char shaOutput[64];
-	unsigned char IV[16];
 
-	memcpy(uCounter, counter, 4);
-	mbedtls_sha512(uCounter, 4, shaOutput, 0);
-	memcpy(IV, shaOutput, 16);
-
-
+	mbedtls_sha512(reinterpret_cast<unsigned char*>(counter), 4, shaOutput, 0);
+	
 	unsigned char output[12]; // 4 for data and 8 reserve for function
-	if(decrypt(input, 4, output, IV, 16, tag, m_aesKey))
+	if(decrypt(input, 4, output, shaOutput, 16, tag, m_aesKey))
 	{
 		memcpy(&lenght, output, 4);
 		return true;
