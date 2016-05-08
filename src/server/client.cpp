@@ -46,7 +46,6 @@ void Client::setAES()
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
 	const char *personalization = "desifrovanie_za_pomoci_RSA";
-	quint64 length = 0;
 	size_t length_decrypted = 0;
 	unsigned char input[512];
 	unsigned char output[512];
@@ -58,16 +57,15 @@ void Client::setAES()
 		reinterpret_cast<const unsigned char *>(personalization), strlen(personalization));
 
 	QDataStream str(socket);
-	str >> length;
-	str.readRawData(reinterpret_cast<char*>(input), length);
+	str.readRawData(reinterpret_cast<char*>(input), 512);
 
 	std::cout << "decrypting aes key" << std::endl;
 
-	result += mbedtls_pk_decrypt(&rsaKey, input, length, output, &length_decrypted, 512, mbedtls_ctr_drbg_random, &ctr_drbg);
+	result += mbedtls_pk_decrypt(&rsaKey, input, 512, output, &length_decrypted, 512, mbedtls_ctr_drbg_random, &ctr_drbg);
 	if (result != 0)
 	{
-		std::cout << "rsa decryption failed, length of input is: " << length << " result is: " << result << std::endl;
-		//return;
+		std::cout << "rsa decryption failed, length of input is: " << 512 << " result is: " << result << std::endl;
+		return;
 	}
 	std::cout << "g";
 	memcpy(m_aesKey, output, 32);
@@ -76,7 +74,7 @@ void Client::setAES()
 	if (result != 0)
 	{
 		std::cout << "keys wasnt distributed correctly" << std::endl;
-		//return;
+		return;
 	}
 	std::cout << "recieved aes key: ";
 	std::cout.write(reinterpret_cast<char*>(m_aesKey), 32);

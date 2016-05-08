@@ -63,8 +63,7 @@ bool ClientManager::handleKeyDistribution()
 
 	QByteArray arr;
 	QDataStream str(&arr, QIODevice::WriteOnly);
-	str << quint64(length);
-	str.writeRawData(reinterpret_cast<char*>(output), length);
+	str.writeRawData(reinterpret_cast<char*>(output), 512);
 	m_serverSocket->write(arr);
 	m_serverSocket->waitForBytesWritten();
 
@@ -107,7 +106,7 @@ void ClientManager::serverConnect(QString ip, quint16 port) {
 	QHostAddress addr(ip);
 	m_serverSocket->connectToHost(addr, port);
 	if (!m_serverSocket->waitForConnected()) {
-		std::cerr << "Could not connect to " << ip.toStdString() << ", " << addr.toString().toStdString() << std::endl;
+		std::cerr << "Could not connect to " << ip.toStdString() << ", " << port << std::endl;
 		return;
 	}
 
