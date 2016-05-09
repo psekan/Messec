@@ -58,6 +58,7 @@ public:
 
 		cout << "commands: quit | connect | disconnect | signin | login | logout | users | chat | chatend | send | file | help" << endl;
 		while (runOk) {
+			cin.clear();
 			cin >> inCommand;
 			commandIndex = -1;
 			for (int i = 0; i < COMMAND_COUNT; ++i) {
@@ -112,7 +113,12 @@ public:
 				cin >> name;
 				cout << "User password: ";
 				cin >> password;
-				emit signIn(QString(name.c_str()), QString(password.c_str()));
+				if (password.find('|') != string::npos || name.find('|') != string::npos) {
+					std::cout << "User name or password contains | or #" << std::endl;
+				}
+				else {
+					emit signIn(QString(name.c_str()), QString(password.c_str()));
+				}
 				break;
 			}
 			case LOGIN: {
@@ -131,7 +137,12 @@ public:
 				cin >> name;
 				cout << "User password: ";
 				cin >> password;
-				emit logIn(QString(name.c_str()), QString(password.c_str()));
+				if (password.find('|') != string::npos || name.find('|') != string::npos) {
+					std::cout << "User name or password contains | or #" << std::endl;
+				}
+				else {
+					emit logIn(QString(name.c_str()), QString(password.c_str()));
+				}
 				break;
 			}
 			case LOGOUT: {
@@ -186,7 +197,7 @@ public:
 				}
 				string msg; 
 				getline(std::cin, msg);
-				emit sendToMessenger(QString::fromStdString(msg));
+				emit sendToMessenger(QString::fromStdString(msg).trimmed());
 				break;
 			}
 			case FILE: {

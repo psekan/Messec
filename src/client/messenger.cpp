@@ -80,7 +80,11 @@ void Messenger::readData() {
 	{
 		quint8 messageType;
 		QByteArray array;
-		parseMessage(m_readingBuffer, &m_inCounter, &messageType, array, m_aesKey);
+		if (!parseMessage(m_readingBuffer, &m_inCounter, &messageType, array, m_aesKey))
+		{
+			std::cout << "Communication " << std::endl;
+			exit();
+		}
 		QDataStream stream(&array, QIODevice::ReadOnly);
 
 		if (messageType == MESSAGETYPE_MESSAGE) {
@@ -142,6 +146,7 @@ void Messenger::saveFile(QString name, QByteArray content)
 	}
 	f.write(content);
 	f.close();
+	std::cout << "File '" << name.toStdString() << "' was received." << std::endl;
 }
 
 bool Messenger::serverHandshake() {
