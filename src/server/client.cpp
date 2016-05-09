@@ -67,7 +67,6 @@ void Client::setAES()
 		std::cout << "rsa decryption failed, length of input is: " << 512 << " result is: " << result << std::endl;
 		return;
 	}
-	std::cout << "g";
 	memcpy(m_aesKey, output, 32);
 	memcpy(&m_clientPort, output + 32, 2);
 
