@@ -308,7 +308,7 @@ void ClientManager::startCommunicationWith(QString userName) {
 		runMessenger(msngr, false);
 	}
 	else if (messageType == MESSAGETYPE_PARTNER_NOT_ONLINE) {
-		std::cout << "Partner is not online" << messageType << std::endl;
+		std::cout << "Partner is not online" << std::endl;
 	}
 	else
 		std::cout << "Incoming unknown messagetype: " << messageType << std::endl;

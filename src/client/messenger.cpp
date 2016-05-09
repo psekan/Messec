@@ -156,7 +156,6 @@ bool Messenger::serverHandshake() {
 
 	if (!decryptLength(initLength, initLengthAndTag, initLengthAndTag + 4, &counter, m_clientMngrAes))
 	{
-		std::cout << "decrypt of data from server length failed" << std::endl;
 		return false;
 	}
 
@@ -170,7 +169,6 @@ bool Messenger::serverHandshake() {
 
 	if (decryptedInit == nullptr)
 	{
-		std::cout << "decrypt of of data from server failed" << std::endl;
 		delete[] (decryptedInit - sizeof(uint8_t));
 		return false;
 	}
@@ -206,7 +204,6 @@ bool Messenger::serverHandshake() {
 		
 		if(!encryptLength(outlen_ser, encryptedLengthAndTag, encryptedLengthAndTag + 4, &counter, m_randomNumbers))
 		{
-			std::cout << "encrypt of DH length failed" << std::endl;
 			delete[](decryptedInit - sizeof(uint8_t));
 			return false;
 		}
@@ -234,7 +231,6 @@ bool Messenger::serverHandshake() {
 
 		if (!decryptLength(DHLength, DHLengthAndTag, DHLengthAndTag + 4, &counter, m_randomNumbers))
 		{
-			std::cout << "decrypt of DH length failed" << std::endl;
 			delete[](decryptedInit - sizeof(uint8_t));
 			return false;
 		}
@@ -249,7 +245,6 @@ bool Messenger::serverHandshake() {
 
 		if (decryptedDH == nullptr)
 		{
-			std::cout << "decrypt of DH failed" << std::endl;
 			delete[](decryptedInit - sizeof(uint8_t));
 			delete[] (decryptedDH - sizeof(quint8));
 			return false;
@@ -257,7 +252,6 @@ bool Messenger::serverHandshake() {
 
 		if (messageType != MESSAGETYPE_DIFFIE_HELMAN)
 		{
-			std::cout << "DIFIE HELLMAN ended before completed - wrong recieved data" << std::endl;
 			delete[](decryptedInit - sizeof(uint8_t));
 			delete[](decryptedDH - sizeof(quint8));
 			return false;
@@ -293,7 +287,6 @@ bool Messenger::serverHandshake() {
 
 		if (authDataForA == nullptr)
 		{
-			std::cout << "encrypt of data to A failed" << std::endl;
 			delete[](decryptedInit - sizeof(uint8_t));
 			return false;
 		}
@@ -311,21 +304,18 @@ bool Messenger::serverHandshake() {
 
 		if (decryptedAuth == nullptr)
 		{
-			std::cout << "decrypt of authentization message failed" << std::endl;
 			delete[](decryptedInit - sizeof(uint8_t));
 			delete[](decryptedAuth - sizeof(uint8_t));
 			return false;
 		}
 		if (messageType != MESSAGETYPE_AUTHENTICATION)
 		{
-			std::cout << "authentization ended before completed - wrong recieved data" << std::endl;
 			delete[](decryptedInit - sizeof(uint8_t));
 			delete[](decryptedAuth - sizeof(uint8_t));
 			return false;
 		}
 		if (memcmp(decryptedAuth, m_randomNumbers + 32, 16) != 0)
 		{
-			std::cout << "authentiacation failed" << std::endl;
 			delete[](decryptedInit - sizeof(uint8_t));
 			delete[](decryptedAuth - sizeof(uint8_t));
 			return false;
@@ -339,7 +329,7 @@ bool Messenger::serverHandshake() {
 		return true;
 	}
 
-	std::cout << "unknow data was recieved";
+	std::cout << "unknow data received";
 	delete[](decryptedInit - sizeof(uint8_t));
 	return false;
 }
@@ -370,7 +360,6 @@ bool Messenger::clientHandshake() {
 
 	if (!decryptLength(DHLength, DHLengthAndTag, DHLengthAndTag + 4, &counter, m_randomNumbers))
 	{
-		std::cout << "decrypt of DH length failed" << std::endl;
 		return false;
 	}
 
@@ -384,14 +373,12 @@ bool Messenger::clientHandshake() {
 	
 	if (decryptedDH == nullptr)
 	{
-		std::cout << "decrypt of DH failed" << std::endl;
 		delete[](decryptedDH - sizeof(quint8));
 		return false;
 	}
 
 	if (messageType != MESSAGETYPE_DIFFIE_HELMAN)
 	{
-		std::cout << "DIFIE HELLMAN ended before completed - wrong recieved data" << std::endl;
 		delete[](decryptedDH - sizeof(quint8));
 		return false;
 	}
@@ -417,7 +404,7 @@ bool Messenger::clientHandshake() {
 	counter = 0;
 	if(!encryptLength(outlen_cl, encryptedLengthAndTag, encryptedLengthAndTag + 4, &counter, m_randomNumbers))
 	{
-		std::cout << "encrypt of DH lenght failed" << std::endl;
+		return false;
 	}
 
 	QByteArray array;
@@ -456,19 +443,16 @@ bool Messenger::clientHandshake() {
 
 	if (decryptedAuth == nullptr)
 	{
-		std::cout << "decrypt of authentization message failed" << std::endl;
 		delete[](decryptedAuth - sizeof(uint8_t));
 		return false;
 	}
 	if (messageType != MESSAGETYPE_AUTHENTICATION)
 	{
-		std::cout << "authentization ended before completed - wrong recieved data" << std::endl;
 		delete[](decryptedAuth - sizeof(uint8_t));
 		return false;
 	}
 	if (memcmp(decryptedAuth, m_randomNumbers + 48, 16) != 0)
 	{
-		std::cout << "authentication failed" << std::endl;
 		delete[](decryptedAuth - sizeof(uint8_t));
 		return false;
 	}
@@ -477,7 +461,6 @@ bool Messenger::clientHandshake() {
 
 	if (authDataForB == nullptr)
 	{
-		std::cout << "encrypt of data to B failed" << std::endl;
 		return false;
 	}
 

@@ -411,12 +411,6 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 	
 	message = "";
 	srcClient->sendMessage(MESSAGETYPE_PARTNER_NOT_ONLINE, message);
-	/*QByteArray array;
-	QDataStream output(&array, QIODevice::WriteOnly);
-	output << quint8(MESSAGETYPE_PARTNER_NOT_ONLINE);
-	srcClient->socket->write(array);
-	srcClient->socket->waitForBytesWritten();*/
-	/////////////////////////
 }
 
 bool ServerManager::isOnline(QString name) {
