@@ -96,6 +96,12 @@ int ServerManager::generateRSAKey()
 	return result;
 }
 
+mbedtls_pk_context ServerManager::getRSAKey() const
+{
+	return m_rsaKey;
+}
+
+
 /*Network*/
 void ServerManager::start()
 {
@@ -116,17 +122,6 @@ void ServerManager::incomingConnection(qintptr handle)
 }
 
 /*Database + client*/
-void ServerManager::clearDatabase() {
-	m_database.clearDatabase();
-}
-
-void ServerManager::removeUserFromDb(std::string userName) {
-	if (!m_database.removeUser(userName))
-	{
-		std::cerr << "Client remove from database failed\n";
-	}
-}
-
 bool ServerManager::userRegistration(std::string userName, std::string password) {
 	if (password.length() < 8)
 	{
@@ -201,20 +196,6 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 }
 
 /*Client operations*/
-void ServerManager::kickUser(std::string userName) {
-	std::string message = "You were kicked by server\n";
-
-	QMutexLocker locker(&mutex);
-	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
-	{
-		if (userName.compare((*it)->m_userName) == 0)
-		{
-			Client *client = *it;
-			client->disconnect();
-			return;
-		}
-	}
-}
 
 Client* ServerManager::clientConnect(qintptr socket) {
 	Client* newClient = new Client(socket, this);
@@ -325,8 +306,6 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		std::cerr << "Client is null - createCommunication\n";
 		return;
 	}
-	MessageTypes message_typeA = MESSAGETYPE_PARTNER_INFO;
-	MessageTypes message_typeB = MESSAGETYPE_COMUNICATION_INIT;
 	QString message;
 	QHostAddress ip;
 	quint16 port;
@@ -449,23 +428,29 @@ bool ServerManager::isOnline(QString name) {
 	return false;
 }
 
-
-mbedtls_pk_context ServerManager::getRSAKey() const
-{
-	return m_rsaKey;
+//NOT USED
+void ServerManager::clearDatabase() {
+	m_database.clearDatabase();
 }
 
-/*TODO*/
-void ServerManager::processClientCommunication(Client* client) {
-	//TODO
+void ServerManager::removeUserFromDb(std::string userName) {
+	if (!m_database.removeUser(userName))
+	{
+		std::cerr << "Client remove from database failed\n";
+	}
 }
 
-void ServerManager::processNewConnectionRequests() {
-	//TODO
+void ServerManager::kickUser(std::string userName) {
+	std::string message = "You were kicked by server\n";
+
+	QMutexLocker locker(&mutex);
+	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
+	{
+		if (userName.compare((*it)->m_userName) == 0)
+		{
+			Client *client = *it;
+			client->disconnect();
+			return;
+		}
+	}
 }
-
-void ServerManager::sendNewRequestToClient(Client* from, Client* to, unsigned char hash[16]) {
-	//TODO
-}
-
-

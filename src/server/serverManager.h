@@ -22,36 +22,14 @@ class ServerManager : public QTcpServer
 {
 	Q_OBJECT
 	quint16 port;
-	
     mbedtls_pk_context m_rsaKey;
     std::vector<Client*> m_clients;
 	Database m_database;
 	mutable QMutex mutex;
-
-    /**
-     * Process client incoming requests.
-     * @param Client
-     */
-    void processClientCommunication(Client* client);
-
-    /**
-     * Process new requests for connection.
-     * Create Client objects and save them to container.
-     */
-    void processNewConnectionRequests();
-
-    /**
-     * Send new request from one client to other with hash to later verification.
-     * @param Client& client who created request
-     * @param Client& requested client
-     * @param unsigned char[16] verification hash
-     */
-    void sendNewRequestToClient(Client* from, Client* to, unsigned char hash[16]);
-
    
 public:
 	/**
-	* Create new server manager on sqlite database.
+	* @brief Create new server manager on sqlite database.
 	* @exception DatabaseAccessForbidden if cannot read or create database file
 	* @param std::string path to sqlite database
 	* @param qint16 port on tcp protocol
@@ -62,29 +40,21 @@ public:
 	~ServerManager();
 
 	/**
-	* Generate aes key and send them to both client and send to clients their ip addresses.
-	* @param Client&
-	* @param Client&
+	* @brief Generate aes key and send them to both client and send to clients their ip addresses.
+	* @param Client* srcClient initializator of communication
+	* @param QString userName of partner to connect
 	*/
 	void createCommunication(Client* srcClient, QString userName);
+
+	/**
+	* @brief RSA key getter
+	*/
 	mbedtls_pk_context getRSAKey() const;
 
 	/**
 	* @brief start Method starts infinite loop
 	*/
 	void start();   
-
-    /**
-     * Clear whole database, all users.
-     * Cannot be execute if server is running.
-     */
-    void clearDatabase();
-
-	/**
-	 * Remove specific user from database
-	 * @param std::string user name
-	 */
-    void removeUserFromDb(std::string userName);
 
 	/**
 	* Add new user to database.
@@ -102,12 +72,6 @@ public:
 	*/
 	bool userAuthentication(std::string userName, std::string password);
 
-    /**
-     * Close connection with user.
-     * @param std::string name of user.
-     */
-    void kickUser(std::string userName);	
-
 	/**
 	 * New client is connected
 	 * @param qintptr socket
@@ -118,9 +82,30 @@ public:
 	/**
 	* check if user is online
 	* @param QString name of user to check
-	* @return true if client is logged in
+	* @return bool true if client is logged in
 	*/
 	bool isOnline(QString name);
+
+	/**
+	* Clear whole database, all users.
+	* Cannot be execute if server is running.
+	* NOT USED
+	*/
+	void clearDatabase();
+
+	/**
+	* Remove specific user from database
+	* @param std::string user name
+	* NOT USED
+	*/
+	void removeUserFromDb(std::string userName);
+
+	/**
+	* Close connection with user.
+	* @param std::string name of user.
+	* NOT USED
+	*/
+	void kickUser(std::string userName);
 
 protected:
 	/**
@@ -145,18 +130,16 @@ public slots:
 	/**
 	 * Log in client as user
 	 * @param Client& client object
-	 * @param std::string user name
-	 * @param std::string user password
-	 * @return bool false if cannot log in user
+	 * @param QString user name
+	 * @param QString user password
 	 */
 	void clientLogIn(QString userName, QString password, Client* client);
 
 	/**
 	* Sign in client as user
-	* @param Client& client object
 	* @param std::string user name
 	* @param std::string user password
-	* @return bool false if cannot log in user
+	* @param Client* client object
 	*/
 	void clientSignIn(QString userName, QString password, Client* client);
 
@@ -165,8 +148,15 @@ public slots:
 	 */
 	void clientLogOut(Client* client);
 
+	/**
+	* Sends list of all online users to client
+	* @param Client* client who wants the list
+	*/
 	void getOnlineUsers(Client* client);
 
+	/**
+	* @brief RSA key generator
+	*/
 	int generateRSAKey();
 };
 

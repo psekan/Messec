@@ -29,7 +29,7 @@ class ClientManager : public QTcpServer {
 	std::string m_myName;
 	//Connection with server
 	QTcpSocket* m_serverSocket;
-	QTcpSocket* m_peerSocket; ///////////////////////////////socket with other user
+	QTcpSocket* m_peerSocket; //socket with other user
 
 	mbedtls_rsa_context m_serverKey;
 	unsigned char m_aesKey[32];
