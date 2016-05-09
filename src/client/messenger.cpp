@@ -65,7 +65,9 @@ bool Messenger::isAlive() const {
 
 void Messenger::readData() {
 	if (m_messageLength == 0) {
-		socket->read(reinterpret_cast<char*>(&m_messageLength), sizeof(size_t));
+		unsigned char lenthAndTag[20];
+		socket->read(reinterpret_cast<char*>(lenthAndTag), 20);
+		decryptLength(m_messageLength, lenthAndTag, lenthAndTag + 4, &m_inCounter, m_aesKey);
 		m_messageLength += TAG_SIZE; //need to read also tag to buffer for parse
 	}
 
@@ -165,6 +167,7 @@ bool Messenger::serverHandshake() {
 
 	counter = 0;
 	const unsigned char *decryptedInit = decryptMessage(&messageType, &counter, uResponse, initLength, initTag, m_clientMngrAes);
+	delete[] uResponse;
 	initLength -= sizeof(quint8); // - messagetype
 
 	if (decryptedInit == nullptr)
@@ -201,9 +204,16 @@ bool Messenger::serverHandshake() {
 		const unsigned char* encryptedDH = encryptMessage(MESSAGETYPE_DIFFIE_HELMAN, &counter, buf_ser, outlen_ser, outlen_ser, tag, m_randomNumbers);
 		unsigned char encryptedLengthAndTag[20];
 		counter = 0;
+
+		if(encryptedDH == nullptr)
+		{
+			delete[](decryptedInit - sizeof(uint8_t));
+			return false;
+		}
 		
 		if(!encryptLength(outlen_ser, encryptedLengthAndTag, encryptedLengthAndTag + 4, &counter, m_randomNumbers))
 		{
+			delete[] encryptedDH;
 			delete[](decryptedInit - sizeof(uint8_t));
 			return false;
 		}
@@ -241,12 +251,12 @@ bool Messenger::serverHandshake() {
 
 		counter = 0;
 		const unsigned char *decryptedDH = decryptMessage(&messageType, &counter, uDH, DHLength, DHTag, m_randomNumbers);
+		delete[] uDH;
 		DHLength -= sizeof(quint8); // - messagetype
 
 		if (decryptedDH == nullptr)
 		{
 			delete[](decryptedInit - sizeof(uint8_t));
-			delete[] (decryptedDH - sizeof(quint8));
 			return false;
 		}
 
@@ -305,7 +315,6 @@ bool Messenger::serverHandshake() {
 		if (decryptedAuth == nullptr)
 		{
 			delete[](decryptedInit - sizeof(uint8_t));
-			delete[](decryptedAuth - sizeof(uint8_t));
 			return false;
 		}
 		if (messageType != MESSAGETYPE_AUTHENTICATION)
@@ -368,6 +377,7 @@ bool Messenger::clientHandshake() {
 	DH.readRawData(reinterpret_cast<char*>(uDH), DHLength);
 	counter = 0;
 	const unsigned char *decryptedDH = decryptMessage(&messageType, &counter, uDH, DHLength, DHTag, m_randomNumbers);
+	delete[] uDH;
 
 	DHLength -= sizeof(quint8); // - messagetype
 	
@@ -402,8 +412,15 @@ bool Messenger::clientHandshake() {
 	const unsigned char* encryptedDH = encryptMessage(MESSAGETYPE_DIFFIE_HELMAN, &counter, buf_cl, outlen_cl, outlen_cl, tag, m_randomNumbers);
 	unsigned char encryptedLengthAndTag[20];
 	counter = 0;
+	
+	if(encryptedDH == nullptr)
+	{
+		return false;
+	}
+
 	if(!encryptLength(outlen_cl, encryptedLengthAndTag, encryptedLengthAndTag + 4, &counter, m_randomNumbers))
 	{
+		delete[] encryptedDH;
 		return false;
 	}
 
@@ -461,6 +478,7 @@ bool Messenger::clientHandshake() {
 
 	if (authDataForB == nullptr)
 	{
+		delete[](decryptedAuth - sizeof(uint8_t));
 		return false;
 	}
 
@@ -469,6 +487,7 @@ bool Messenger::clientHandshake() {
 	socket->write(arrayAuth);
 	socket->waitForBytesWritten();
 		
+	delete[] authDataForB;
 	delete[](decryptedAuth - sizeof(uint8_t));
 	return true;
 }
