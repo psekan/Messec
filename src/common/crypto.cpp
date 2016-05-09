@@ -180,6 +180,7 @@ bool parseMessage(QByteArray &input, uint32_t* m_inCounter, quint8* message_type
 	}
 	message.append(reinterpret_cast<const char *>(pMessage), messageLength - sizeof(quint8));
 	delete[] uMessage;
+	delete[](pMessage - sizeof(quint8));
 	return true;
 }
 
@@ -187,11 +188,22 @@ bool sendMessage(QTcpSocket* socket, uint32_t* m_outCounter, quint8 messageType,
 {
 	size_t length;
 	unsigned char tag[16];
+	
+	(*m_outCounter)++;  // we can parse message in right order easier, message counter should be one more than lenght
 	const unsigned char* uMessage = encryptMessage(messageType, m_outCounter, reinterpret_cast<const unsigned char*>(message.data()), message.size(), length, tag, m_aesKey);
+	(*m_outCounter) -= 2;
+	unsigned char encryptedLengthAndTag[20];
+	bool result = encryptLength(length, encryptedLengthAndTag, encryptedLengthAndTag + 4, m_outCounter, m_aesKey);
+	(*m_outCounter)++;
 
-	if (uMessage == nullptr) return false;
+	if (uMessage == nullptr || !result)
+	{
+		std::cout << "encryption failed" << std::endl;
+		delete[] uMessage;
+		return false;
+	}
 
-	socket->write(reinterpret_cast<const char*>(&length), sizeof(size_t));
+	socket->write(reinterpret_cast<const char*>(encryptedLengthAndTag), 20);
 	socket->write(reinterpret_cast<const char*>(uMessage), length);
 	socket->write(reinterpret_cast<const char*>(tag), 16);
 
