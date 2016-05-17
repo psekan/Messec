@@ -13,7 +13,9 @@ bool encrypt(const unsigned char * input, size_t inlen, unsigned char * output, 
 	mbedtls_gcm_context ctx;
 	mbedtls_gcm_init(&ctx);
 	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, key, 256);
-	return !mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_GCM_ENCRYPT, inlen, iv, iv_len, nullptr, 0, input, output, 16, tag);
+	bool ret = !mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_GCM_ENCRYPT, inlen, iv, iv_len, nullptr, 0, input, output, 16, tag);
+	mbedtls_gcm_free(&ctx);
+	return ret;
 }
 
 bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, const unsigned char* iv, size_t iv_len, const unsigned char* tag, const unsigned char* key)
@@ -21,7 +23,9 @@ bool decrypt(const unsigned char * input, size_t inlen, unsigned char * output, 
 	mbedtls_gcm_context ctx;
 	mbedtls_gcm_init(&ctx);
 	mbedtls_gcm_setkey(&ctx, MBEDTLS_CIPHER_ID_AES, key, 256);
-	return !mbedtls_gcm_auth_decrypt(&ctx, inlen, iv, iv_len, nullptr, 0, tag, 16, input, output);
+	bool ret = !mbedtls_gcm_auth_decrypt(&ctx, inlen, iv, iv_len, nullptr, 0, tag, 16, input, output);
+	mbedtls_gcm_free(&ctx);
+	return ret;
 }
 
 void initRandomContexts(mbedtls_entropy_context& entropy, mbedtls_ctr_drbg_context& ctr_drbg)

@@ -29,14 +29,14 @@ void Client::sendRSA()
 	int result = mbedtls_pk_write_pubkey_pem(&rsaKey, output_buf, 32000);
 	if (result != 0)
 	{
-		std::cout << "parsing failed";
+		qDebug() << "parsing failed";
 		return;
 	}
 
-	std::cout << "sending RSA" << std::endl;
+	qDebug() << "sending RSA";
 	socket->write(reinterpret_cast<char*>(output_buf));
 	socket->waitForBytesWritten();
-	std::cout << "RSA sent" << std::endl;
+	qDebug() << "RSA sent";
 }
 
 void Client::setAES()
@@ -59,12 +59,12 @@ void Client::setAES()
 	QDataStream str(socket);
 	str.readRawData(reinterpret_cast<char*>(input), 512);
 
-	std::cout << "decrypting aes key" << std::endl;
+	qDebug() << "decrypting aes key";
 
 	result += mbedtls_pk_decrypt(&rsaKey, input, 512, output, &length_decrypted, 512, mbedtls_ctr_drbg_random, &ctr_drbg);
 	if (result != 0)
 	{
-		std::cout << "rsa decryption failed, length of input is: " << 512 << " result is: " << result << std::endl;
+		qDebug() << "rsa decryption failed, length of input is: " << 512 << " result is: " << result;
 		return;
 	}
 	memcpy(m_aesKey, output, 32);
@@ -72,14 +72,14 @@ void Client::setAES()
 
 	if (result != 0)
 	{
-		std::cout << "keys wasnt distributed correctly" << std::endl;
+		qDebug() << "keys were not distributed correctly";
 		return;
 	}
-	std::cout << "recieved aes key: ";
+	qDebug() << "received aes key: ";
 	std::cout.write(reinterpret_cast<char*>(m_aesKey), 32);
 	std::cout << std::endl;
 
-	std::cout << "recieved port: " << m_clientPort << std::endl;
+	qDebug() << "received port: " << m_clientPort;
 
 	mbedtls_entropy_free(&entropy);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
@@ -126,7 +126,7 @@ void Client::logOutUser() {
 
 void Client::readData()
 {
-	std::cout << "Reading data" << std::endl;
+	qDebug() << "Reading data";
 	ServerManager *server = reinterpret_cast<ServerManager*>(parent());
 
 	quint8 messageType;
@@ -137,33 +137,25 @@ void Client::readData()
 	QString userName, userPassword;
 	switch (messageType) {
 	case MESSAGETYPE_LOGIN:
-		std::cout << "login initialized" << std::endl;
 		list = message.split("|#|");
 		server->clientLogIn(list[0], list[1], this);
-		std::cout << "login end" << std::endl;
 		break;
 	case MESSAGETYPE_SIGNIN:
-		std::cout << "singin initialized" << std::endl;
 		list = message.split("|#|");
 		server->clientSignIn(list[0], list[1], this);
-		std::cout << "signin end" << std::endl;
 		break;
 	case MESSAGETYPE_LOGOUT:
-		std::cout << "logout initialized" << std::endl;
 		logOutUser();
-		std::cout << "logout end" << std::endl;
 		break;
 	case MESSAGETYPE_GET_ONLINE_USERS:
-		std::cout << "listing of users initialized" << std::endl;
 		server->getOnlineUsers(this);
-		std::cout << "listing of users end" << std::endl;
 		break;
 	
 	case MESSAGETYPE_GET_PARTNER:
 		server->createCommunication(this, message);
 		break;
 	default:
-		std::cout << "Wrong message type" << std::endl;
+		qDebug() << "Wrong message type";
 	}
 }
 

@@ -61,9 +61,9 @@ void stringToUCHar(std::string &input, unsigned char* output)
 
 /*Constructor*/
 ServerManager::ServerManager(std::string dbFilePath, quint16 port, quint16 keySize, QObject *parent) : QTcpServer(parent), port(port), m_database(dbFilePath) {
-	std::cout << "Generating RSA key" << std::endl;
+	qDebug() << "Generating RSA key";
 	if (generateRSAKey()) {
-		std::cout << "Something went wrong with generating RSA key" << std::endl;
+		qDebug() << "Something went wrong with generating RSA key";
 		exit(0);
 	}
 }
@@ -125,7 +125,7 @@ void ServerManager::incomingConnection(qintptr handle)
 bool ServerManager::userRegistration(std::string userName, std::string password) {
 	if (password.length() < 8)
 	{
-		std::cerr << "Password was too short (length at least 8 characters is required)\n";
+		qDebug() << "Password was too short (length at least 8 characters is required)";
 		return false;
 	}
 
@@ -133,7 +133,7 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 
 	if (row.getName().length() != 0)
 	{
-		std::cerr << "Username is taken\n";
+		qDebug() << "Username is taken";
 		return false;
 	}
 
@@ -157,7 +157,7 @@ bool ServerManager::userRegistration(std::string userName, std::string password)
 		return m_database.insertUser(UserDatabaseRow(userName, password_string, salt_string));
 	}
 
-	std::cerr << "Some crypto fuction failed\n";
+	qDebug() << "Some crypto fuction failed";
 	return false;
 }
 
@@ -166,7 +166,7 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 
 	if (row.getName().compare("") == 0)
 	{
-		std::cerr << "Wrong username or password\n";
+		qDebug() << "Wrong username or password";
 		return false;
 	}
 
@@ -188,10 +188,10 @@ bool ServerManager::userAuthentication(std::string userName, std::string passwor
 		{
 			return true;
 		}
-		std::cerr << "Wrong username or password\n";
+		qDebug() << "Wrong username or password";
 		return false;
 	}
-	std::cerr << "Some crypto fuction failed\n";
+	qDebug() << "Some crypto fuction failed";
 	return false;
 }
 
@@ -209,7 +209,7 @@ void ServerManager::clientDisconnect() {
 	Client* client = dynamic_cast<Client*>(sender());
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null - clientDisconnect\n";
+		qDebug() << "Client is null - clientDisconnect";
 		return;
 	}
 
@@ -217,38 +217,34 @@ void ServerManager::clientDisconnect() {
 	auto it = std::find(m_clients.begin(), m_clients.end(), client);
 	m_clients.erase(it);
 	delete client;
-	std::cout << "client deleted" << std::endl;
+	qDebug() << "client deleted";
 }
 
 void ServerManager::clientLogIn(QString userName, QString password, Client* client) {
-	
-	std::cout << userName.toStdString() << " is trying to login with password: " << password.toStdString() << std::endl; //////////debug print
-	
+	qDebug() << userName << " is trying to login with password: " << password;
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null - clientLogIn\n";
+		qDebug() << "Client is null - clientLogIn";
 		return;
 	}
 	if (!isOnline(userName) && userAuthentication(userName.toStdString(), password.toStdString()))
 	{
 		client->sendMessage(MESSAGETYPE_LOGIN_SUCCESS, "OK");
 		client->logInUser(userName.toStdString());
-		std::cout << "login OK" << std::endl;
+		qDebug() << "login OK";
 	}
 	else
 	{
 		client->sendMessage(MESSAGETYPE_LOGIN_FAIL, "NOK");
-		std::cout << "login FAIL" << std::endl;
+		qDebug() << "login FAIL";
 	}
 }
 
 void ServerManager::clientSignIn(QString userName, QString password, Client* client) {
-	
-	std::cout << userName.toStdString() << " is trying to signin with password: " << password.toStdString() << std::endl;
-
+	qDebug() << userName << " is trying to sign up with password: " << password;
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null - clientSignIn\n";
+		qDebug() << "Client is null - clientSignIn";
 		return;
 	}
 
@@ -256,19 +252,19 @@ void ServerManager::clientSignIn(QString userName, QString password, Client* cli
 	{
 		client->sendMessage(MESSAGETYPE_SIGNIN_SUCCESS, "OK");
 		client->logInUser(userName.toStdString());
-		std::cout << "signin OK" << std::endl;
+		qDebug() << "signin OK";
 	}
 	else
 	{
 		client->sendMessage(MESSAGETYPE_SIGNIN_FAIL, "NOK");
-		std::cout << "signin FAIL" << std::endl;
+		qDebug() << "signin FAIL";
 	}
 }
 
 void ServerManager::clientLogOut(Client* client) {
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null - clientLogOut\n";
+		qDebug() << "Client is null - clientLogOut";
 		return;
 	}
 	client->logOutUser();
@@ -277,7 +273,7 @@ void ServerManager::clientLogOut(Client* client) {
 void ServerManager::getOnlineUsers(Client* client) {
 	if (client == nullptr)
 	{
-		std::cerr << "Client is null - getOnlineUsers\n";
+		qDebug() << "Client is null - getOnlineUsers";
 		return;
 	}
 
@@ -296,14 +292,15 @@ void ServerManager::getOnlineUsers(Client* client) {
 		}
 	}
 	locker.unlock();
-	std::cout << "list to send: " << message.toStdString() << std::endl;
+	qDebug() << "list to send: ";
+	qDebug() << message;
 	client->sendMessage(MESSAGETYPE_GET_ONLINE_USERS, message);
 }
 
 void ServerManager::createCommunication(Client* srcClient, QString userName) {
 	if (srcClient == nullptr)
 	{
-		std::cerr << "Client is null - createCommunication\n";
+		qDebug() << "Client is null - createCommunication";
 		return;
 	}
 	QString message;
@@ -346,7 +343,7 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		
 		if(dataToSendB == nullptr)
 		{
-			std::cout << "encrypt of data to B failed" << std::endl;
+			qDebug() << "encrypt of data to B failed";
 			return; 
 		}
 		
@@ -354,7 +351,7 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		
 		if(!encryptLength(dataBoutputLength, encryptedLenghtAndTagB, encryptedLenghtAndTagB + 4, &counter, bAES))
 		{
-			std::cout << "encrypt of lenght to B failed" << std::endl;
+			qDebug() << "encrypt of lenght to B failed";
 			return;
 		}
 
@@ -379,14 +376,14 @@ void ServerManager::createCommunication(Client* srcClient, QString userName) {
 		
 		if (dataToSendB == nullptr)
 		{
-			std::cout << "encrypt of data to A failed" << std::endl;
+			qDebug() << "encrypt of data to A failed";
 			return;
 		}
 
 		srcClient->m_outCounter -= 2;
 		if(!encryptLength(dataAoutputLength, encryptedLenghtAndTagA, encryptedLenghtAndTagA + 4, &srcClient->m_outCounter, srcClient->m_aesKey))
 		{
-			std::cout << "encrypt of lenght to A failed" << std::endl;
+			qDebug() << "encrypt of lenght to A failed";
 			return;
 		}
 		srcClient->m_outCounter++;
@@ -430,12 +427,12 @@ void ServerManager::clearDatabase() {
 void ServerManager::removeUserFromDb(std::string userName) {
 	if (!m_database.removeUser(userName))
 	{
-		std::cerr << "Client remove from database failed\n";
+		qDebug() << "Client remove from database failed";
 	}
 }
 
 void ServerManager::kickUser(std::string userName) {
-	std::string message = "You were kicked by server\n";
+	std::string message = "You were kicked by server";
 
 	QMutexLocker locker(&mutex);
 	for (auto it = m_clients.begin(); it != m_clients.end(); ++it)
