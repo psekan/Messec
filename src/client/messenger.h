@@ -44,7 +44,7 @@ class Messenger : public QThread {
 	const static size_t TAG_SIZE = 16;
 
 	void saveFile(QString name, QByteArray content);
-
+	bool serverHandshakeAuthentication(uint32_t initLength, const unsigned char* decryptedInit);
 public:
 	//Constant
 	const static size_t MESSAGE_INFO_SIZE = 37;
@@ -95,7 +95,7 @@ public:
 	* partners run authentication protocol
 	*/
 	bool Messenger::serverHandshake();
-
+	bool clientHandshakeAuthentication();
 
 public slots:
 	void readData();

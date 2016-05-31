@@ -4,9 +4,9 @@
 
 #include "messenger.h"
 #include "crypto.h"
-#include <mbedtls\dhm.h>
-#include <mbedtls\gcm.h>
-#include <mbedtls\sha512.h>
+#include <mbedtls/dhm.h>
+#include <mbedtls/gcm.h>
+#include <mbedtls/sha512.h>
 #include <string.h>
 #include <limits.h>
 #include <iostream>
@@ -147,6 +147,62 @@ void Messenger::saveFile(QString name, QByteArray content)
 	f.write(content);
 	f.close();
 	std::cout << "File '" << name.toStdString() << "' was received." << std::endl;
+}
+
+bool Messenger::serverHandshakeAuthentication(uint32_t initLength, const unsigned char* decryptedInit)
+{
+	quint8 messageType;
+	QByteArray arrayAuth;
+	QDataStream authentizationOutput(&arrayAuth, QIODevice::WriteOnly);
+	QDataStream authentizationInput(socket);
+	uint32_t authoutputLength;
+	unsigned char tagAuth[16];
+	unsigned char authFromA[16 + sizeof(uint8_t)];
+	unsigned char tagFromA[16];
+
+	const unsigned char* authDataForA = encryptMessage(MESSAGETYPE_AUTHENTICATION, &m_outCounter, m_randomNumbers + 48, 16, authoutputLength, tagAuth, m_aesKey);  // encrypt dara for A
+
+	if (authDataForA == nullptr)
+	{
+		delete[](decryptedInit - sizeof(uint8_t));
+		return false;
+	}
+
+	authentizationOutput.writeRawData(reinterpret_cast<const char*>(tagAuth), 16);
+	authentizationOutput.writeRawData(reinterpret_cast<const char*>(authDataForA), 16 + sizeof(uint8_t));
+	socket->write(arrayAuth);
+	socket->waitForBytesWritten();
+
+	socket->waitForReadyRead();
+	authentizationInput.readRawData(reinterpret_cast<char*>(tagFromA), 16);
+	authentizationInput.readRawData(reinterpret_cast<char*>(authFromA), 16 + sizeof(uint8_t));
+
+	const unsigned char *decryptedAuth = decryptMessage(&messageType, &m_inCounter, authFromA, 16 + sizeof(uint8_t), tagFromA, m_aesKey);
+
+	if (decryptedAuth == nullptr)
+	{
+		delete[](decryptedInit - sizeof(uint8_t));
+		return false;
+	}
+	if (messageType != MESSAGETYPE_AUTHENTICATION)
+	{
+		delete[](decryptedInit - sizeof(uint8_t));
+		delete[](decryptedAuth - sizeof(uint8_t));
+		return false;
+	}
+	if (memcmp(decryptedAuth, m_randomNumbers + 32, 16) != 0)
+	{
+		delete[](decryptedInit - sizeof(uint8_t));
+		delete[](decryptedAuth - sizeof(uint8_t));
+		return false;
+	}
+
+	std::cout << "chat with user: ";
+	std::cout.write(reinterpret_cast<char const*>(decryptedInit + 64), initLength - 64) << std::endl;
+
+	delete[](decryptedAuth - sizeof(uint8_t));
+	delete[](decryptedInit - sizeof(uint8_t));
+	return true;
 }
 
 bool Messenger::serverHandshake() {
@@ -290,57 +346,7 @@ bool Messenger::serverHandshake() {
 		mbedtls_dhm_free(&dhm_ser);
 
 		// AUTHENTICATION
-		QByteArray arrayAuth;
-		QDataStream authentizationOutput(&arrayAuth, QIODevice::WriteOnly);
-		QDataStream authentizationInput(socket);
-		uint32_t authoutputLength;
-		unsigned char tagAuth[16];
-		unsigned char authFromA[16 + sizeof(uint8_t)];
-		unsigned char tagFromA[16];
-
-		const unsigned char* authDataForA = encryptMessage(MESSAGETYPE_AUTHENTICATION, &m_outCounter, m_randomNumbers + 48, 16, authoutputLength, tagAuth, m_aesKey);  // encrypt dara for A
-
-		if (authDataForA == nullptr)
-		{
-			delete[](decryptedInit - sizeof(uint8_t));
-			return false;
-		}
-
-		authentizationOutput.writeRawData(reinterpret_cast<const char*>(tagAuth), 16);
-		authentizationOutput.writeRawData(reinterpret_cast<const char*>(authDataForA), 16 + sizeof(uint8_t));
-		socket->write(arrayAuth);
-		socket->waitForBytesWritten();
-
-		socket->waitForReadyRead();
-		authentizationInput.readRawData(reinterpret_cast<char*>(tagFromA), 16);
-		authentizationInput.readRawData(reinterpret_cast<char*>(authFromA), 16 + sizeof(uint8_t));
-
-		const unsigned char *decryptedAuth = decryptMessage(&messageType, &m_inCounter, authFromA, 16 + sizeof(uint8_t), tagFromA, m_aesKey);
-
-		if (decryptedAuth == nullptr)
-		{
-			delete[](decryptedInit - sizeof(uint8_t));
-			return false;
-		}
-		if (messageType != MESSAGETYPE_AUTHENTICATION)
-		{
-			delete[](decryptedInit - sizeof(uint8_t));
-			delete[](decryptedAuth - sizeof(uint8_t));
-			return false;
-		}
-		if (memcmp(decryptedAuth, m_randomNumbers + 32, 16) != 0)
-		{
-			delete[](decryptedInit - sizeof(uint8_t));
-			delete[](decryptedAuth - sizeof(uint8_t));
-			return false;
-		}
-
-		std::cout << "chat with user: ";
-		std::cout.write(reinterpret_cast<char const*>(decryptedInit + 64), initLength - 64) << std::endl;
-
-		delete[](decryptedAuth - sizeof(uint8_t));
-		delete[](decryptedInit - sizeof(uint8_t));
-		return true;
+		return serverHandshakeAuthentication(initLength, decryptedInit);
 	}
 
 	std::cout << "unknow data received";
@@ -348,6 +354,57 @@ bool Messenger::serverHandshake() {
 	return false;
 }
 
+
+bool Messenger::clientHandshakeAuthentication()
+{
+	uint8_t messageType;
+	QByteArray arrayAuth;
+	QDataStream authentizationOutput(&arrayAuth, QIODevice::WriteOnly);
+	QDataStream authentizationInput(socket);
+	uint32_t authoutputLength;
+	unsigned char tagAuth[16];
+	unsigned char authFromB[16 + sizeof(uint8_t)];
+	unsigned char tagFromB[16];
+
+	socket->waitForReadyRead();
+	authentizationInput.readRawData(reinterpret_cast<char*>(tagFromB), 16);
+	authentizationInput.readRawData(reinterpret_cast<char*>(authFromB), 16 + sizeof(uint8_t));
+
+	const unsigned char *decryptedAuth = decryptMessage(&messageType, &m_inCounter, authFromB, 16 + sizeof(uint8_t), tagFromB, m_aesKey);
+
+	if (decryptedAuth == nullptr)
+	{
+		delete[](decryptedAuth - sizeof(uint8_t));
+		return false;
+	}
+	if (messageType != MESSAGETYPE_AUTHENTICATION)
+	{
+		delete[](decryptedAuth - sizeof(uint8_t));
+		return false;
+	}
+	if (memcmp(decryptedAuth, m_randomNumbers + 48, 16) != 0)
+	{
+		delete[](decryptedAuth - sizeof(uint8_t));
+		return false;
+	}
+
+	const unsigned char* authDataForB = encryptMessage(MESSAGETYPE_AUTHENTICATION, &m_outCounter, m_randomNumbers + 32, 16, authoutputLength, tagAuth, m_aesKey);  // encrypt dara for B
+
+	if (authDataForB == nullptr)
+	{
+		delete[](decryptedAuth - sizeof(uint8_t));
+		return false;
+	}
+
+	authentizationOutput.writeRawData(reinterpret_cast<const char*>(tagAuth), 16);
+	authentizationOutput.writeRawData(reinterpret_cast<const char*>(authDataForB), authoutputLength);
+	socket->write(arrayAuth);
+	socket->waitForBytesWritten();
+		
+	delete[] authDataForB;
+	delete[](decryptedAuth - sizeof(uint8_t));
+	return true;
+}
 
 bool Messenger::clientHandshake() {
 	unsigned char buf_cl[2048];
@@ -449,50 +506,5 @@ bool Messenger::clientHandshake() {
 	mbedtls_dhm_free(&dhm_cl);
 
 	// AUTHENTICATION
-	QByteArray arrayAuth;
-	QDataStream authentizationOutput(&arrayAuth, QIODevice::WriteOnly);
-	QDataStream authentizationInput(socket);
-	uint32_t authoutputLength;
-	unsigned char tagAuth[16];
-	unsigned char authFromB[16 + sizeof(uint8_t)];
-	unsigned char tagFromB[16];
-
-	socket->waitForReadyRead();
-	authentizationInput.readRawData(reinterpret_cast<char*>(tagFromB), 16);
-	authentizationInput.readRawData(reinterpret_cast<char*>(authFromB), 16 + sizeof(uint8_t));
-
-	const unsigned char *decryptedAuth = decryptMessage(&messageType, &m_inCounter, authFromB, 16 + sizeof(uint8_t), tagFromB, m_aesKey);
-
-	if (decryptedAuth == nullptr)
-	{
-		delete[](decryptedAuth - sizeof(uint8_t));
-		return false;
-	}
-	if (messageType != MESSAGETYPE_AUTHENTICATION)
-	{
-		delete[](decryptedAuth - sizeof(uint8_t));
-		return false;
-	}
-	if (memcmp(decryptedAuth, m_randomNumbers + 48, 16) != 0)
-	{
-		delete[](decryptedAuth - sizeof(uint8_t));
-		return false;
-	}
-
-	const unsigned char* authDataForB = encryptMessage(MESSAGETYPE_AUTHENTICATION, &m_outCounter, m_randomNumbers + 32, 16, authoutputLength, tagAuth, m_aesKey);  // encrypt dara for B
-
-	if (authDataForB == nullptr)
-	{
-		delete[](decryptedAuth - sizeof(uint8_t));
-		return false;
-	}
-
-	authentizationOutput.writeRawData(reinterpret_cast<const char*>(tagAuth), 16);
-	authentizationOutput.writeRawData(reinterpret_cast<const char*>(authDataForB), authoutputLength);
-	socket->write(arrayAuth);
-	socket->waitForBytesWritten();
-		
-	delete[] authDataForB;
-	delete[](decryptedAuth - sizeof(uint8_t));
-	return true;
+	return clientHandshakeAuthentication();
 }
